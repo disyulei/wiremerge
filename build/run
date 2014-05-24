@@ -1,0 +1,8 @@
+#!
+
+#./wireMerge -inlib calibre_test.ascii
+#./wireMerge -inlib MIPScore-fullM1.ascii  -layer 49      # Segmentation error from H-Tree !!!
+
+
+
+

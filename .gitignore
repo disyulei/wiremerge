@@ -1,0 +1,10 @@
+
+src/tags
+build/libOA/
+build/*ascii
+build/*gds
+build/*.out
+build/*.tcl
+
+
+

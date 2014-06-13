@@ -13,8 +13,8 @@ public:
   ~Design();
 
   bool parseParameters(int argc, char** argv);
-  void ReadAll();
-  void MergeWires();
+  void readAll();
+  void mergeWires();
   void OutputASCII_new();     // output to new ascii format used in DAC'12
   void OutputASCII();         // output my current ascii format 
 

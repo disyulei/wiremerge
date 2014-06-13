@@ -15,9 +15,9 @@ main(int argc, char* argv[])
     printUsage();
     exit(1);
   }
-  LC->ReadAll();
+  LC->readAll();
 
-  LC->MergeWires();
+  LC->mergeWires();
 } 
 
 

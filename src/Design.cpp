@@ -57,10 +57,10 @@ Design::parseParameters(int argc, char** argv)
 //}}}
 
 void
-Design::ReadAll()
+Design::readAll()
 {
 #ifdef _DEBUG_BEI
-  cout<<"DEBUG| ReadAll() "<<endl;
+  cout<<"DEBUG| readAll() "<<endl;
 #endif
   
   size_t found = library_.rfind( ".ascii" );
@@ -128,6 +128,7 @@ Design::ReadSearchUntil( ifstream& in, string str1, string str2 )
 
 double
 Design::ReadUnitsValue( ifstream& in, string to_compare )
+//{{{
 {
   size_t found = string::npos;
   string str;
@@ -146,6 +147,7 @@ Design::ReadUnitsValue( ifstream& in, string to_compare )
   }
   return -1;
 }
+//}}}
 
 int
 Design::ReadLayerNum( ifstream& in, string to_compare )
@@ -237,10 +239,10 @@ Design::ReadBlock( ifstream& in )
 //}}}
 
 void
-Design::MergeWires()
+Design::mergeWires()
 {
 #ifdef _DEBUG_BEI
-  cout << "DEBUG| Design::MergeWires()" << endl;
+  cout << "DEBUG| Design::mergeWires()" << endl;
 #endif
   TouchComponentCompute_RTree();
   Debug_Output();
@@ -314,6 +316,7 @@ Design::TouchComponentCompute_RTree()
 }
 /*}}}*/
 
+
 // =========================================================
 //   output all input polygons
 // =========================================================
@@ -347,7 +350,7 @@ Design::Debug_WireInput(string file)
     } // for j
   } // for i
 
-	out << "$L gdsout wire_merge_input.gds\n" << endl;
+	out << "$L gdsout debug/wire_merge_input.gds\n" << endl;
 	out.close();
 }
 //}}}
@@ -416,7 +419,7 @@ Design::Debug_Output(string file)
 
   } // for i
 
-	out << "$L gdsout wire_merge_output.gds\n" << endl;
+	out << "$L gdsout debug/wire_merge_output.gds\n" << endl;
 	out.close();
 }
 //}}}

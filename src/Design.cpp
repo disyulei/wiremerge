@@ -81,9 +81,9 @@ Design::ReadASCII()
 #endif
 
   ifstream in;  in.open(library_.c_str());
-  if (NULL == in) {
-    cout << "ERROR| cannot open file: " << library_ << endl;
-    exit(0);
+  if (false == in.is_open())
+  {
+    cout<<"ERROR| cannot open file: "<<library_<<endl;  exit(0);
   }
 
   ReadSearchUntil(in, "HEADER");
@@ -107,6 +107,7 @@ Design::ReadASCII()
 }
 //}}}
 
+
 bool
 Design::ReadSearchUntil( ifstream& in, string str1, string str2 )
 //{{{
@@ -125,6 +126,7 @@ Design::ReadSearchUntil( ifstream& in, string str1, string str2 )
   return false;
 }
 //}}}
+
 
 double
 Design::ReadUnitsValue( ifstream& in, string to_compare )
@@ -307,7 +309,7 @@ Design::TouchComponentCompute_RTree()
   }
 
   #ifdef _DEBUG_BEI
-    printf ("DEBUG| num of wires to merge is %d, num of wires after merge is %d\n", m_Metals[layerMerge_].size(), num);
+    printf ("DEBUG| num of wires to merge is %d, num of wires after merge is %d\n", (int)m_Metals[layerMerge_].size(), num);
   #endif
   cout << "STAT| num of wires before merge: " << m_Metals[layerMerge_].size() << endl;
   cout << "STAT| num of wires after  merge: " << num << endl;

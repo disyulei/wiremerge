@@ -5,7 +5,7 @@ BOOST_I=-I$(BOOST_HOME)
 #**************************************************************************#
 #                         Standard Setting
 #**************************************************************************#
-CC        =  g++
+CC        =  g++34
 CXX       =  g++34
 CFLAGS    =  -funroll-all-loops -O2 -m64 -fPIC -Wno-deprecated 
 #CFLAGS   =  -g -Wno-deprecated 

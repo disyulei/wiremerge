@@ -179,7 +179,7 @@ myBox::getDist2Box(myBox* box2, int MAX_DIST)
       cy = (cy + ch) - oy;
       if (abs(cx) > MAX_DIST) return MAX_DIST;
       if (abs(cy) > MAX_DIST) return MAX_DIST;
-      result = std::sqrt(cx*cx + cy*cy); 
+      result = (int)std::sqrt(cx*cx + cy*cy); 
       break;
     case 1:
       temp = abs((cy+ch) - oy);
@@ -191,7 +191,7 @@ myBox::getDist2Box(myBox* box2, int MAX_DIST)
       cy = (cy + ch) - oy;
       if (abs(cx) > MAX_DIST) return MAX_DIST;
       if (abs(cy) > MAX_DIST) return MAX_DIST;
-      result = std::sqrt(cx*cx + cy*cy);
+      result = (int)std::sqrt(cx*cx + cy*cy);
       break;
     case 3:
       temp = abs((ox + ow) -cx);
@@ -203,7 +203,7 @@ myBox::getDist2Box(myBox* box2, int MAX_DIST)
       cy = (oy + oh) - cy;
       if (abs(cx) > MAX_DIST) return MAX_DIST;
       if (abs(cy) > MAX_DIST) return MAX_DIST;
-      result = std::sqrt(cx*cx + cy*cy);
+      result = (int)std::sqrt(cx*cx + cy*cy);
       break;
     case 5:
       temp = abs((oy+oh) - cy);
@@ -215,7 +215,7 @@ myBox::getDist2Box(myBox* box2, int MAX_DIST)
       cy = (oy + oh) - cy;
       if (abs(cx) > MAX_DIST) return MAX_DIST;
       if (abs(cy) > MAX_DIST) return MAX_DIST;
-      result = std::sqrt(cx*cx + cy*cy);
+      result = (int)std::sqrt(cx*cx + cy*cy);
       break;
     case 7:
       temp = abs ( (cx+cw) - ox );

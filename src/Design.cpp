@@ -107,6 +107,7 @@ Design::ReadASCII()
 }
 //}}}
 
+
 bool
 Design::ReadSearchUntil( ifstream& in, string str1, string str2 )
 //{{{
@@ -125,6 +126,7 @@ Design::ReadSearchUntil( ifstream& in, string str1, string str2 )
   return false;
 }
 //}}}
+
 
 double
 Design::ReadUnitsValue( ifstream& in, string to_compare )

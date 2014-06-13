@@ -1,4 +1,6 @@
 #include "Design.h"
+using namespace std;
+using namespace bLib;
 
 Design::Design()
 //{{{
@@ -179,7 +181,7 @@ Design::ReadBlock( ifstream& in )
   if (layer >= layerMax_) return false;
   if (false == ReadSearchUntil( in, "BOXTYPE", "DATATYPE" )) return false;
 
-  oaPointArray vpoints;
+  vector<myPoint> vpoints;  vpoints.clear();
   int xl = INT_MAX, yl = INT_MAX;
   int xh = INT_MIN, yh = INT_MIN;
   string str; getline(in, str);
@@ -205,7 +207,7 @@ Design::ReadBlock( ifstream& in )
         y = (int) (y / ratio_);
       }
       // New point
-      vpoints.append( oaPoint(x, y) );
+      vpoints.push_back( myPoint(x, y) );
       if (xl > x) xl = x;
       if (yl > y) yl = y;
       if (xh < x) xh = x;
@@ -213,15 +215,16 @@ Design::ReadBlock( ifstream& in )
     }
     pch = strtok (NULL, " :,");
   }
-  vpoints.setSize( vpoints.getSize()-1, true );
+  if (vpoints.size() == 0) {return true;}
+  vpoints.resize( vpoints.size()-1, true );
 
   myShape* pmyshape = new myShape(xl, yl, xh, yh);
-  pmyshape->SetPoints( vpoints );
-  pmyshape->SetID( m_Metals[layer].size() );
+  pmyshape->setPoints( vpoints );
+  pmyshape->setId( m_Metals[layer].size() );
 
-  vector<oaBox> vBoxes;
-  bool bb = PTR::Polygon2Rectangle(vpoints, vBoxes);
-  if (true == bb) pmyshape->SetRealBoxes(vBoxes);
+  vector<myBox> vBoxes;
+  bool bb = PTR::polygon2Rect(vpoints, vBoxes);
+  if (true == bb) pmyshape->setRealBoxes(vBoxes);
 
   m_Metals[layer].push_back(pmyshape);
 #if 1
@@ -240,7 +243,7 @@ Design::MergeWires()
   cout << "DEBUG| Design::MergeWires()" << endl;
 #endif
   TouchComponentCompute_RTree();
-  //Debug_Output();
+  Debug_Output();
 
   OutputASCII();            // for each component, output the boundary points
 }
@@ -259,25 +262,28 @@ Design::TouchComponentCompute_RTree()
   {
     //printf ("TouchComponentCompute Process: %.2f%\n", (double)i/(double)m_Metals[layerMerge_].size()*100);
 
-    int sourceid = m_Metals[layerMerge_][i]->GetID();
+    int sourceid = m_Metals[layerMerge_][i]->getId();
     assert( sourceid == i );
 
-    m_rtree.searchoaBox(m_Metals[layerMerge_][i]->m_realBox);
-    int size = WireRTree::s_searchResult.size();
+    m_rtree.search( m_Metals[layerMerge_][i]->x1(),
+                    m_Metals[layerMerge_][i]->y1(),
+                    m_Metals[layerMerge_][i]->x2(),
+                    m_Metals[layerMerge_][i]->y2());
+    int size = bLib::bLibRTree<myShape>::s_searchResult.size();
     for (int j=0; j<size; j++)
     {
-      myShape* adjshape = WireRTree::s_searchResult[j];
-      int sinkid = adjshape->GetID();
+      myShape* adjshape = bLibRTree<myShape>::s_searchResult[j];
+      int sinkid = adjshape->getId();
       if (sourceid == sinkid) continue;
 
       bool bconnect = false;
       for (int k=0; k<m_Metals[layerMerge_][sourceid]->m_realBoxes.size(); k++)
       {
-        oaBox* box1 = m_Metals[layerMerge_][sourceid]->m_realBoxes[k]->m_interbox;
+        myBox* box1 = m_Metals[layerMerge_][sourceid]->m_realBoxes[k];
         for (int l=0; l<m_Metals[layerMerge_][sinkid]->m_realBoxes.size(); l++)
         {
-          oaBox* box2 = m_Metals[layerMerge_][sinkid]->m_realBoxes[l]->m_interbox;
-          if (false == box1->overlaps(*box2, true)) continue;
+          myBox* box2 = m_Metals[layerMerge_][sinkid]->m_realBoxes[l];
+          if (false == box1->overlaps(box2, true)) continue;
           bconnect = true;
         } // for l
       } // for k
@@ -331,14 +337,13 @@ Design::Debug_WireInput(string file)
     myShape* pmyshape = m_Metals[layerMerge_][i];
 		//out << "$L create polygon debug " << 0 << " ";  
     //oaBox* poabox = pmyshape->m_realBox;
-		//out	<< poabox->left() << " " << poabox->bottom() << " " << poabox->right() << " " << poabox->top()  << endl;
+		//out	<< poabox->x1() << " " << poabox->y1() << " " << poabox->x2() << " " << poabox->y2()  << endl;
 
     for (int j=0; j<pmyshape->m_realBoxes.size(); j++)
     {
-      myBox* pmybox = pmyshape->m_realBoxes[j];
-      oaBox* pbox   = pmybox->m_interbox;
+      myBox* pbox = pmyshape->m_realBoxes[j];
 		  out << "$L create polygon debug " << layerMerge_ << " ";  
-		  out	<< pbox->left() << " " << pbox->bottom() << " " << pbox->right() << " " << pbox->top()  << endl;
+		  out	<< pbox->x1() << " " << pbox->y1() << " " << pbox->x2() << " " << pbox->y2()  << endl;
     } // for j
   } // for i
 
@@ -370,10 +375,9 @@ Design::Debug_Output(string file)
       int id = m_MergedWireIDs[i][0];
       myShape* pmyshape = m_Metals[layerMerge_][id];
       out << "$L create polygon debug " << layerMerge_ << " ";  
-      for (int j=0; j<pmyshape->m_vpoints.getSize(); j++)
+      for (int j=0; j<pmyshape->getPointNum(); j++)
       {
-        oaPoint point = pmyshape->m_vpoints[j];
-        out << point.x() << " " << point.y() << " ";
+        out << pmyshape->getPointX(j) << ", " << pmyshape->getPointY(j) << ", ";
       }
       out << endl;
       continue;
@@ -381,12 +385,14 @@ Design::Debug_Output(string file)
 
     // merge into one polygon
     gtl::property_merge_90<int, int> pm;
-    for (int j=0; j<m_MergedWireIDs[i].size(); j++) {
+    for (int j=0; j<m_MergedWireIDs[i].size(); j++)
+    {
       int id = m_MergedWireIDs[i][j];
       myShape* pmyshape = m_Metals[layerMerge_][id];
-      for (int k=0; k<pmyshape->m_realBoxes.size(); k++) {
-        oaBox* poabox = pmyshape->m_realBoxes[k]->m_interbox;
-        pm.insert( gtl::rectangle_data<int>(poabox->left(), poabox->bottom(), poabox->right(), poabox->top()), 0 );
+      for (int k=0; k<pmyshape->m_realBoxes.size(); k++)
+      {
+        myBox* poabox = pmyshape->m_realBoxes[k];
+        pm.insert( gtl::rectangle_data<int>(poabox->x1(), poabox->y1(), poabox->x2(), poabox->y2()), 0 );
       } // for k
     } // for j
     map< set<int>, gtl::polygon_90_set_data<int> > result;
@@ -453,11 +459,11 @@ Design::OutputASCII()
       out<<"BOXTYPE: 0"<<endl;
       out<<"XY: ";
       myShape* pmyshape = m_Metals[idx][j];
-      for (int j=0; j<pmyshape->m_vpoints.getSize(); j++) {
-        oaPoint point = pmyshape->m_vpoints[j];
-        out << point.x() << ", " << point.y() << ", ";
+      for (int j=0; j<pmyshape->getPointNum(); j++)
+      {
+        out << pmyshape->getPointX(j) << ", " << pmyshape->getPointY(j) << ", ";
       }
-      out << pmyshape->m_vpoints[0].x() << ", " << pmyshape->m_vpoints[0].y() << endl;
+      out << pmyshape->getPointX(0) << ", " << pmyshape->getPointY(0) << endl;
       out<<"ENDEL"<<endl;
     } // for j
   } // for idx
@@ -470,16 +476,16 @@ Design::OutputASCII()
     if (1 == lsize) {
       int id = m_MergedWireIDs[i][0];
       myShape* pmyshape = m_Metals[layerMerge_][id];
-      if (pmyshape->m_vpoints.getSize() <= 0) continue;
+      if (pmyshape->getPointNum() <= 0) continue;
       out<<"BOX"<<endl;
       out<<"LAYER: "<<layerMerge_<<endl;
       out<<"BOXTYPE: 0"<<endl;
       out<<"XY: ";
-      for (int j=0; j<pmyshape->m_vpoints.getSize(); j++) {
-        oaPoint point = pmyshape->m_vpoints[j];
-        out << point.x() << ", " << point.y() << ", ";
+      for (int j=0; j<pmyshape->getPointNum(); j++)
+      {
+        out << pmyshape->getPointX(j) << ", " << pmyshape->getPointY(j) << ", ";
       }
-      out << pmyshape->m_vpoints[0].x() << ", " << pmyshape->m_vpoints[0].y() << endl;
+      out << pmyshape->getPointX(0) << ", " << pmyshape->getPointY(0) << endl;
       out<<"ENDEL"<<endl;
       continue;
     }
@@ -494,8 +500,8 @@ Design::OutputASCII()
       int id = m_MergedWireIDs[i][j];
       myShape* pmyshape = m_Metals[layerMerge_][id];
       for (int k=0; k<pmyshape->m_realBoxes.size(); k++) {
-        oaBox* poabox = pmyshape->m_realBoxes[k]->m_interbox;
-        pm.insert( gtl::rectangle_data<int>(poabox->left(), poabox->bottom(), poabox->right(), poabox->top()), 0 );
+        myBox* poabox = pmyshape->m_realBoxes[k];
+        pm.insert( gtl::rectangle_data<int>(poabox->x1(), poabox->y1(), poabox->x2(), poabox->y2()), 0 );
       } // for k
     } // for j
     map< set<int>, gtl::polygon_90_set_data<int> > result;
@@ -580,13 +586,12 @@ Design::OutputASCII_new()
       out<<"BOXTYPE: 0"<<endl;
       out<<"XY: ";
       myShape* pmyshape = m_Metals[idx][j];
-      out << pmyshape->m_vpoints.getSize() + 1 << "  ";   // here is the only new thing
-      for (int j=0; j<pmyshape->m_vpoints.getSize(); j++)
+      out << pmyshape->getPointNum() + 1 << "  ";   // here is the only new thing
+      for (int j=0; j<pmyshape->getPointNum(); j++)
       {
-        oaPoint point = pmyshape->m_vpoints[j];
-        out << point.x() << ", " << point.y() << ", ";
+        out << pmyshape->getPointX(j) << ", " << pmyshape->getPointY(j) << ", ";
       }
-      out << pmyshape->m_vpoints[0].x() << ", " << pmyshape->m_vpoints[0].y() << endl;
+      out << pmyshape->getPointX(0) << ", " << pmyshape->getPointY(0) << endl;
       out<<"ENDEL"<<endl;
     } // for j
   } // for idx
@@ -600,17 +605,17 @@ Design::OutputASCII_new()
     {
       int id = m_MergedWireIDs[i][0];
       myShape* pmyshape = m_Metals[layerMerge_][id];
-      if (pmyshape->m_vpoints.getSize() <= 0) continue;
+      if (pmyshape->getPointNum() <= 0) continue;
       out<<"BOX"<<endl;
       out<<"LAYER: "<<layerMerge_<<endl;
       out<<"BOXTYPE: 0"<<endl;
       out<<"XY: ";
-      out << pmyshape->m_vpoints.getSize() + 1 << "  ";    // the only new thing
-      for (int j=0; j<pmyshape->m_vpoints.getSize(); j++) {
-        oaPoint point = pmyshape->m_vpoints[j];
-        out << point.x() << ", " << point.y() << ", ";
+      out << pmyshape->getPointNum() + 1 << "  ";    // the only new thing
+      for (int j=0; j<pmyshape->getPointNum(); j++)
+      {
+        out << pmyshape->getPointX(j) << ", " << pmyshape->getPointY(j) << ", ";
       }
-      out << pmyshape->m_vpoints[0].x() << ", " << pmyshape->m_vpoints[0].y() << endl;
+      out << pmyshape->getPointX(0) << ", " << pmyshape->getPointY(0) << endl;
       out<<"ENDEL"<<endl;
       continue;
     }
@@ -628,8 +633,8 @@ Design::OutputASCII_new()
       myShape* pmyshape = m_Metals[layerMerge_][id];
       for (int k=0; k<pmyshape->m_realBoxes.size(); k++)
       {
-        oaBox* poabox = pmyshape->m_realBoxes[k]->m_interbox;
-        pm.insert( gtl::rectangle_data<int>(poabox->left(), poabox->bottom(), poabox->right(), poabox->top()), 0 );
+        myBox* poabox = pmyshape->m_realBoxes[k];
+        pm.insert( gtl::rectangle_data<int>(poabox->x1(), poabox->y1(), poabox->x2(), poabox->y2()), 0 );
       } // for k
     } // for j
 

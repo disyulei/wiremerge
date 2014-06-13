@@ -1,16 +1,5 @@
-#**************************************************************************#
-#                         Special Library
-#**************************************************************************#
-# openaccess
-OA_I = -I/home/polaris/bei/app/openaccessv2/include/oa
-#OA_L = -L../build/oalib -loaCommon -loaBase -loaDM -loaTech -loaDesign -loaWafer -loaPlugIn -ldl
-OA_L = -L../build/libOA -loaCommon -loaBase -loaDM -loaTech -loaDesign -loaWafer -loaPlugIn -ldl
-#OA_I = 
-#OA_L = 
-
 # boost
-BOOST_I = -I/home/usr1/bei/boost_1_49_0
-#BOOST_I = 
+BOOST_I=-I$(BOOST_HOME)
 
 
 #**************************************************************************#
@@ -34,11 +23,11 @@ EXE	= $(BPATH)wireMerge
 
 $(EXE): $(OBJS)
 	@$(MKDIR)
-	$(CC) $(CFLAGS) -o $@ $(OBJS) $(OA_L) $(CCLNFLAGS) 
+	$(CC) $(CFLAGS) -o $@ $(OBJS) $(CCLNFLAGS) 
 
 $(OPATH)%.o:%.cpp
 	@$(MKDIR)
-	$(CC) $(CFLAGS) -c -o $@ $< $(OA_I) $(BOOST_I)
+	$(CC) $(CFLAGS) -c -o $@ $< $(BOOST_I)
 
 clean:
 	rm -f *.o *~ $(EXE) $(OPATH)*

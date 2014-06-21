@@ -28,7 +28,7 @@ namespace gtl = boost::polygon;
 using namespace boost::polygon::operators;
 
 
-#define _DEBUG_BEI
+//#define _DEBUG_BEI
 //#define _DEBUG_PTR
 
 typedef boost::adjacency_list <boost::vecS, boost::vecS, boost::undirectedS> Graph;

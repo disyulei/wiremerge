@@ -5,7 +5,8 @@ using namespace bLib;
 Design::Design()
 //{{{
 {
-  library_     = "MX_Benchmark1_blind_partial.ascii";
+  input_       = "MX_Benchmark1_blind_partial.ascii";
+  output_      = "";
   layerMerge_  = 10;
   layerMax_    = 500;
 
@@ -35,14 +36,22 @@ Design::parseParameters(int argc, char** argv)
 #endif
 
   while (argc) {
-    // parameters for input/output setting
-    if ( strcmp(*argv, "-inlib") == 0 ) {
+    if ( strcmp(*argv, "-in") == 0 )
+    {
       argc--, argv++;
-      library_ = (*argv);
+      input_ = (*argv);
       argc--, argv++;
       continue;
     }
-    if ( strcmp(*argv, "-layer") == 0 ) {
+    if ( strcmp(*argv, "-out") == 0 )
+    {
+      argc--, argv++;
+      output_ = (*argv);
+      argc--, argv++;
+      continue;
+    }
+    if ( strcmp(*argv, "-layer") == 0 )
+    {
       argc--, argv++;
       layerMerge_ = atoi(*argv);
       argc--, argv++;
@@ -63,7 +72,7 @@ Design::readAll()
   cout<<"DEBUG| readAll() "<<endl;
 #endif
   
-  size_t found = library_.rfind( ".ascii" );
+  size_t found = input_.rfind( ".ascii" );
   if (found == string::npos) {
     cout << "ERROR| is not a ascii file" << endl;
     exit(0);
@@ -80,10 +89,10 @@ Design::ReadASCII()
   cout<<"DEBUG| ReadASCII() "<<endl;
 #endif
 
-  ifstream in;  in.open(library_.c_str());
+  ifstream in;  in.open(input_.c_str());
   if (false == in.is_open())
   {
-    cout<<"ERROR| cannot open file: "<<library_<<endl; exit(0);
+    cout<<"ERROR| cannot open file: "<<input_<<endl; exit(0);
   }
 
   ReadSearchUntil(in, "HEADER");
@@ -435,7 +444,7 @@ Design::OutputASCII()
 #ifdef _DEBUG_BEI
   cout << "DEBUG| OutputASCII()" << endl;
 #endif
-  string file = library_;
+  string file = input_;
   size_t found = file.rfind( ".ascii" );
   if (found == string::npos)
   {
@@ -443,6 +452,8 @@ Design::OutputASCII()
     exit(0);
   }
   file.replace(found, 0, "_merged");
+  
+  if (output_.length() >= 0) file = output_;
 
   ofstream out;
   out.open( file.c_str() );
@@ -551,143 +562,5 @@ Design::OutputASCII()
   cout << "STAT| finish output to " << file << endl;
 }
 //}}}
-
-
-// output new ascii format used in DAC'12
-void
-Design::OutputASCII_new()
-//{{{
-{
-#ifdef _DEBUG_BEI
-  cout << "DEBUG| OutputASCII_new()" << endl;
-#endif
-  string file = library_;
-  size_t found = file.rfind( ".ascii" );
-  if (found == string::npos) {
-    cout << "ERROR| in Design::OutputASCII_new(), file is not a ascii file" << endl;
-    exit(0);
-  }
-  file.replace(found, 0, "_merged");
-
-  ofstream out;
-  out.open( file.c_str() );
-
-  // output header
-  out<<"HEADER: 600"<<endl;
-  out<<"BGNLIB: 2012, 9, 20, 2, 21, 41, 2012, 9, 20, 2, 21, 41"<<endl;
-  out<<"LIBNAME: \"drc.db\""<<endl;
-  out<<"UNITS: 0.001, 1e-9"<<endl;
-  out<<"BGNSTR: 2012, 9, 20, 2, 21, 41, 2012, 9, 20, 2, 21, 41"<<endl;
-  out<<"STRNAME: \"TOP\""<<endl;
-
-  // output other layers
-  for (int idx=0; idx<m_Metals.size(); idx++)
-  {
-    if (idx == layerMerge_) continue;
-    for (int j=0; j<m_Metals[idx].size(); j++)
-    {
-      out<<"BOX"<<endl;
-      out<<"LAYER: "<<idx<<endl;
-      out<<"BOXTYPE: 0"<<endl;
-      out<<"XY: ";
-      myShape* pmyshape = m_Metals[idx][j];
-      out << pmyshape->getPointNum() + 1 << "  ";   // here is the only new thing
-      for (int j=0; j<pmyshape->getPointNum(); j++)
-      {
-        out << pmyshape->getPointX(j) << ", " << pmyshape->getPointY(j) << ", ";
-      }
-      out << pmyshape->getPointX(0) << ", " << pmyshape->getPointY(0) << endl;
-      out<<"ENDEL"<<endl;
-    } // for j
-  } // for idx
-
-  // output each wire
-  for (int i=0; i<m_MergedWireIDs.size(); i++)
-  {
-    int lsize = m_MergedWireIDs[i].size();
-    assert(lsize > 0);
-    if (1 == lsize)
-    {
-      int id = m_MergedWireIDs[i][0];
-      myShape* pmyshape = m_Metals[layerMerge_][id];
-      if (pmyshape->getPointNum() <= 0) continue;
-      out<<"BOX"<<endl;
-      out<<"LAYER: "<<layerMerge_<<endl;
-      out<<"BOXTYPE: 0"<<endl;
-      out<<"XY: ";
-      out << pmyshape->getPointNum() + 1 << "  ";    // the only new thing
-      for (int j=0; j<pmyshape->getPointNum(); j++)
-      {
-        out << pmyshape->getPointX(j) << ", " << pmyshape->getPointY(j) << ", ";
-      }
-      out << pmyshape->getPointX(0) << ", " << pmyshape->getPointY(0) << endl;
-      out<<"ENDEL"<<endl;
-      continue;
-    }
-
-    out<<"BOX"<<endl;
-    out<<"LAYER: "<<layerMerge_<<endl;
-    out<<"BOXTYPE: 0"<<endl;
-    out<<"XY: ";
-
-    // merge into one polygon
-    gtl::property_merge_90<int, int> pm;
-    for (int j=0; j<m_MergedWireIDs[i].size(); j++)
-    {
-      int id = m_MergedWireIDs[i][j];
-      myShape* pmyshape = m_Metals[layerMerge_][id];
-      for (int k=0; k<pmyshape->m_realBoxes.size(); k++)
-      {
-        myBox* poabox = pmyshape->m_realBoxes[k];
-        pm.insert( gtl::rectangle_data<int>(poabox->x1(), poabox->y1(), poabox->x2(), poabox->y2()), 0 );
-      } // for k
-    } // for j
-
-    map< set<int>, gtl::polygon_90_set_data<int> > result;
-    pm.merge(result);
-    set<int> settmp; settmp.insert(0);
-    map< set<int>, gtl::polygon_90_set_data<int> >::iterator itr = result.find(settmp);
-    gtl::polygon_90_set_data<int> polyset = itr->second;
-    vector<Polygon> output;
-    polyset.get_polygons(output);
-    Polygon& poly = output[0];
-
-    // output the polygon
-    // NOTE: after merging, the polygon is scaned clockwise
-    //       should output the polygon ANTI-CLOCKWISE
-    vector<pair<int, int> > vpoints;
-    Polygon::iterator_type poly_itr = poly.begin(), poly_end = poly.end();
-    for (; poly_itr != poly_end; poly_itr++)
-    {
-      int x = gtl::x(*poly_itr);
-      int y = gtl::y(*poly_itr);
-      vpoints.push_back( make_pair(x, y) );
-    }
-    poly_itr = poly.begin();
-    int x = gtl::x(*poly_itr);
-    int y = gtl::y(*poly_itr);
-    vpoints.push_back( make_pair(x, y) );
-
-    int vsize = vpoints.size();
-    out << vsize << "  ";   // here is the only new thing
-    for (int i=vsize-1; i>=0; i--)
-    {
-      out << vpoints[i].first << ", " << vpoints[i].second;
-      if (i == 0) out << " ";
-      else        out << ", ";
-    }
-    out << endl;
-
-    out<<"ENDEL"<<endl;
-  } // for i
-
-  out<<"ENDSTR"<<endl;
-  out<<"ENDLIB"<<endl;
-	out.close();
-
-  cout << "STAT| finish output to " << file << endl;
-}
-//}}}
-
 
 

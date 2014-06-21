@@ -15,11 +15,11 @@ public:
   bool parseParameters(int argc, char** argv);
   void readAll();
   void mergeWires();
-  void OutputASCII_new();     // output to new ascii format used in DAC'12
   void OutputASCII();         // output my current ascii format 
 
 protected:
-  std::string library_;
+  std::string input_;
+  std::string output_;
   int         layerMerge_;              // layer to be merged
   int         layerMax_;
   double      ratio_;

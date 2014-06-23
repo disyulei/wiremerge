@@ -1,6 +1,22 @@
 #ifndef _DESIGN_H_
 #define _DESIGN_H_
 
+// ================================================
+//                  for boost
+// ================================================
+#include <boost/config.hpp>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/connected_components.hpp>
+#include <boost/polygon/polygon.hpp>
+namespace gtl = boost::polygon;
+using namespace boost::polygon::operators;
+
+typedef boost::adjacency_list <boost::vecS, boost::vecS, boost::undirectedS> Graph;
+typedef gtl::polygon_data<int> Polygon;
+typedef gtl::rectangle_data<int> Rectangle;
+typedef gtl::point_data<int> Point;
+
+#include "bLib/bLibBase.h"
 #include "bLib/bLibPtr.h"
 #include "bLib/bLibShape.h"
 #include "bLib/bLibRTree.h"
@@ -10,37 +26,31 @@ class Design
 {
 public:
   Design();
-  ~Design();
+  ~Design(){}
 
-  bool parseParameters(int argc, char** argv);
-  void readAll();
-  void mergeWires();
-  void OutputASCII();         // output my current ascii format 
+  bool   parseParameters(int argc, char** argv);
+  void   readAll();
+  void   mergeWires();
+  void   mergeWires(int);
+  void   outputAscii();
+  void   outputAscii(int, std::ofstream&);
 
 protected:
-  std::string input_;
-  std::string output_;
-  int         layerMerge_;              // layer to be merged
-  int         layerMax_;
-  double      ratio_;
+  std::string  m_input;    // input file name
+  std::string  m_output;   // output file name
+  double       m_ratio;
 
-  std::vector< std::vector<bLib::myShape*> > m_Metals;
-  bLib::bLibRTree<bLib::myShape>             m_rtree;
+  std::vector< std::vector<bLib::myShape*> >     m_Metals;    // input myShape
+  std::vector< std::vector< std::vector<int> > > m_mergeIds;  // group some myShape together
+  std::map<int, int>                             m_layer2Id;
 
-  std::vector< std::vector<int> >   m_MergedWireIDs;
-  std::vector<Polygon>              m_Polygons;
-
-  // functions
-  void   ReadASCII();
-  void   TouchComponentCompute_RTree();
-  bool   ReadSearchUntil( std::ifstream& in, std::string str1, std::string str2="" );
-  bool   ReadBlock( std::ifstream& in );
-  int    ReadLayerNum  ( std::ifstream&, std::string );
-  double ReadUnitsValue( std::ifstream&, std::string );
-
-  // output functions
-  void   Debug_WireInput(std::string file="debug/wire_merge_input.tcl");
-  void   Debug_Output(std::string file="debug/wire_merge_output.tcl");
+  // local functions
+  void   readAscii(int);
+  double readUnitsValue(std::ifstream&, const std::string&);
+  int    readLayerNum(std::ifstream&, const std::string&);
+  double readBlock(int, std::ifstream&);
 };
 
 #endif
+
+

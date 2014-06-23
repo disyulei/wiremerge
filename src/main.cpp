@@ -16,8 +16,8 @@ main(int argc, char* argv[])
     exit(1);
   }
   LC->readAll();
-
   LC->mergeWires();
+  LC->outputAscii();
 } 
 
 
@@ -25,7 +25,7 @@ void
 printWelcome()
 {
   printf("\n");
-  printf("==================   wireMerge - Version 1.2  ====================\n");
+  printf("==================   wireMerge - Version 2.0  ====================\n");
   printf("   Author      :  Bei Yu  (UT Austin)                             \n");
   printf("   Last Update :  06/2014                                         \n");
   printf("   Function    :  remove overlappings in layout                   \n");
@@ -38,7 +38,7 @@ printUsage()
 {
   printf("\n");
   printf("==================   Command-Line Usage   ====================\n");
-  printf("\"-inlib\"         : followed by input library (default: \"MX_Benchmark1_clip\"). \n");
-  printf("\"-layer\"         : followed by layer number (default: 10). \n");
+  printf("\"-in\"         : followed by input library (default: \"input.ascii\"). \n");
+  printf("\"-out\"        : followed by input library (default: \"output.ascii\"). \n");
 	printf("\n");
 }

@@ -1,6 +1,6 @@
 #!
 
-#./wireMerge -in calibre_test.ascii
+./wireMerge -in input.ascii
 
 
 

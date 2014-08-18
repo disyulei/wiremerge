@@ -1,9 +1,12 @@
 #!
 
-==================   wireMerge - Version 1.2  ====================
+==================   wireMerge - Version 2.1  ====================
    Author      :  Bei Yu  (UT Austin)                             
-   Last Update :  06/2014                                         
+   Last Update :  08/2014                                         
    Function    :  remove overlappings in layout                   
 ==================================================================
 
+
+# ==== Log:
+08/2014:  version 2.1: fix potential parsing bug
 

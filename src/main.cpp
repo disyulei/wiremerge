@@ -25,9 +25,9 @@ void
 printWelcome()
 {
   printf("\n");
-  printf("==================   wireMerge - Version 2.0  ====================\n");
+  printf("==================   wireMerge - Version 2.1  ====================\n");
   printf("   Author      :  Bei Yu  (UT Austin)                             \n");
-  printf("   Last Update :  06/2014                                         \n");
+  printf("   Last Update :  08/2014                                         \n");
   printf("   Function    :  remove overlappings in layout                   \n");
   printf("==================================================================\n");
 }

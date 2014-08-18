@@ -2,7 +2,7 @@
 src/tags
 obj/*
 build/libOA/
-build/*ascii
+build/output.ascii
 build/*gds
 build/*.out
 build/*.tcl

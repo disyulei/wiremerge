@@ -1,3 +1,4 @@
+#include <boost/algorithm/string.hpp>
 #include "Design.h"
 using namespace std;
 using namespace bLib;
@@ -282,7 +283,10 @@ Design::readBlock(int round, ifstream& in)
   int xl = INT_MAX, yl = INT_MAX;
   int xh = INT_MIN, yh = INT_MIN;
   getline(in, str);  if (str.size() <= 0) return false;
-  char* pch, chs[20000]; strcpy(chs, str.c_str());
+
+  // old method to parse str
+#if 0
+  char* pch, chs[50000]; strcpy(chs, str.c_str());
   pch = strtok (chs, " :,");
   while (pch != NULL)
   {
@@ -311,6 +315,25 @@ Design::readBlock(int round, ifstream& in)
     }
     pch = strtok (NULL, " :,");
   }
+#endif
+  // new method to parse str
+#if 1
+  string delimiters("\t :,");
+  vector<string> parts;
+  boost::split(parts, str, boost::is_any_of(delimiters), boost::token_compress_on);
+  for (int i=1; i<parts.size(); i++)
+  {
+    int x = int ( atoi(parts[i].c_str()) / m_ratio );
+    i++; if (i>=parts.size()) break;
+    int y = int ( atoi(parts[i].c_str()) / m_ratio );
+
+    vpoints.push_back( myPoint(x, y) );  // New point
+    if (xl > x) xl = x;
+    if (yl > y) yl = y;
+    if (xh < x) xh = x;
+    if (yh < y) yh = y;
+  }
+#endif
   if (vpoints.size() == 0) {return true;}
   vpoints.resize( vpoints.size()-1, true );
 

@@ -66,7 +66,7 @@ Design::mergeWires(int lid)
   if (id<0 || id>=m_Metals.size()) return;
 
   // Step 1: init RTree
-  bLibRTree<myShape> m_rtree;
+  bLibRTree<bShape> m_rtree;
   for (int i=0; i<m_Metals[id].size(); i++) m_rtree.insert(m_Metals[id][i]);
 
   // Step 2: build up graph
@@ -78,18 +78,18 @@ Design::mergeWires(int lid)
                     m_Metals[id][i]->y1(),
                     m_Metals[id][i]->x2(),
                     m_Metals[id][i]->y2());
-    int size = bLib::bLibRTree<myShape>::s_searchResult.size();
+    int size = bLib::bLibRTree<bShape>::s_searchResult.size();
     for (int j=0; j<size; j++)
     {
-      myShape* adjshape = bLibRTree<myShape>::s_searchResult[j];
+      bShape* adjshape = bLibRTree<bShape>::s_searchResult[j];
       int id2 = adjshape->getId();   if (id1 == id2) continue;
 
       bool bconnect = false;
       for (int k=0; k<m_Metals[id][id1]->m_realBoxes.size(); k++)
       for (int l=0; l<m_Metals[id][id2]->m_realBoxes.size(); l++)
       {
-        myBox* box1 = m_Metals[id][id1]->m_realBoxes[k];
-        myBox* box2 = m_Metals[id][id2]->m_realBoxes[l];
+        bBox* box1 = m_Metals[id][id1]->m_realBoxes[k];
+        bBox* box2 = m_Metals[id][id2]->m_realBoxes[l];
         if (false == box1->overlaps(box2, true)) continue;
         bconnect = true;
       } // for k, l
@@ -161,7 +161,7 @@ Design::outputAscii(int lid, ofstream& out)
     if (1 == lsize)
     {
       int sid = m_mergeIds[id][i][0];
-      myShape* pmyshape = m_Metals[id][sid];
+      bShape* pmyshape = m_Metals[id][sid];
       if (pmyshape->getPointNum() <= 0) continue;
       out<<"BOX"<<endl;
       out<<"LAYER: "<<lid<<endl;
@@ -186,10 +186,10 @@ Design::outputAscii(int lid, ofstream& out)
     for (int j=0; j<m_mergeIds[id][i].size(); j++)
     {
       int sid = m_mergeIds[id][i][j];
-      myShape* pmyshape = m_Metals[id][sid];
+      bShape* pmyshape = m_Metals[id][sid];
       for (int k=0; k<pmyshape->m_realBoxes.size(); k++)
       {
-        myBox* poabox = pmyshape->m_realBoxes[k];
+        bBox* poabox = pmyshape->m_realBoxes[k];
         pm.insert( gtl::rectangle_data<int>(poabox->x1(), poabox->y1(), poabox->x2(), poabox->y2()), 0 );
       } // for k
     } // for j
@@ -279,7 +279,7 @@ Design::readBlock(int round, ifstream& in)
   }
 
   // read vpoints
-  vector<myPoint> vpoints;  vpoints.clear();
+  vector<bPoint> vpoints;  vpoints.clear();
   int xl = INT_MAX, yl = INT_MAX;
   int xh = INT_MIN, yh = INT_MIN;
   getline(in, str);  if (str.size() <= 0) return false;
@@ -307,7 +307,7 @@ Design::readBlock(int round, ifstream& in)
         x = (int) (x / m_ratio);
         y = (int) (y / m_ratio);
       }
-      vpoints.push_back( myPoint(x, y) );  // New point
+      vpoints.push_back( bPoint(x, y) );  // New point
       if (xl > x) xl = x;
       if (yl > y) yl = y;
       if (xh < x) xh = x;
@@ -327,7 +327,7 @@ Design::readBlock(int round, ifstream& in)
     i++; if (i>=parts.size()) break;
     int y = int ( atoi(parts[i].c_str()) / m_ratio );
 
-    vpoints.push_back( myPoint(x, y) );  // New point
+    vpoints.push_back( bPoint(x, y) );  // New point
     if (xl > x) xl = x;
     if (yl > y) yl = y;
     if (xh < x) xh = x;
@@ -337,9 +337,9 @@ Design::readBlock(int round, ifstream& in)
   if (vpoints.size() == 0) {return true;}
   vpoints.resize( vpoints.size()-1, true );
 
-  myShape* pmyshape = new myShape(xl, yl, xh, yh);
+  bShape* pmyshape = new bShape(xl, yl, xh, yh);
   pmyshape->setPoints( vpoints );
-  vector<myBox> vBoxes;
+  vector<bBox> vBoxes;
   bool bb = PTR::polygon2Rect(vpoints, vBoxes);
   if (true == bb) pmyshape->setRealBoxes(vBoxes);
   int lid = m_layer2Id[layer];

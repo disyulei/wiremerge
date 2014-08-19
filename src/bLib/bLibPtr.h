@@ -4,7 +4,7 @@
 // ===================================================================
 //    class       : PTR
 //    author      : Bei Yu
-//    last update : 06/2014
+//    last update : 07/2014
 //
 //  Refer to K.D.Gourley and D.M. Green,
 //  "A Polygon-to-Rectangle Conversion Algorithm", IEEE 1983
@@ -27,26 +27,27 @@ class PTR
 {
 public:
   template<class Type>
-  static bool polygon2Rect(std::vector<myPoint>& points, std::vector<Type> & vBoxes);
+  static bool polygon2Rect(std::vector<bPoint>& points, std::vector<Type> & vBoxes);
 
 private:
   // operations on std::vector
-  static void compress(std::vector<myPoint> & points, int difference = 5);
-  static bool findLine(const std::vector<myPoint> points);
-  static bool findPkPlPm(const std::vector<myPoint>&, myPoint&, myPoint&, myPoint&);
-  static bool findVkVlVm(const std::vector<myPoint>&, myPoint&, myPoint&, myPoint&);
-  static void F(std::vector<myPoint>& points, int X, int Y);
-  static int  getHorRangeNext(const std::vector<myPoint>&,const int,const int,const int);
-  static int  getVerRangeNext(const std::vector<myPoint>&,const int,const int,const int);
-  static void print(const std::vector<myPoint> points, int min_x = 0, int min_y = 0);
+  static void compress(std::vector<bPoint> & points, int difference = 5);
+  static bool findLine(const std::vector<bPoint> points);
+  static bool isOrthogonal(const std::vector<bPoint> points);
+  static bool findPkPlPm(const std::vector<bPoint>&, bPoint&, bPoint&, bPoint&);
+  static bool findVkVlVm(const std::vector<bPoint>&, bPoint&, bPoint&, bPoint&);
+  static void F(std::vector<bPoint>& points, int X, int Y);
+  static int  getHorRangeNext(const std::vector<bPoint>&,const int,const int,const int);
+  static int  getVerRangeNext(const std::vector<bPoint>&,const int,const int,const int);
+  static void print(const std::vector<bPoint> points, int min_x = 0, int min_y = 0);
 
   // operations on std::set
-  static bool findPkPlPm(const std::set<myPoint>&, myPoint&, myPoint&, myPoint&);
-  static bool findVkVlVm(const std::set<myPoint>&, myPoint&, myPoint&, myPoint&);
-  static void F(std::set<myPoint>& points, int X, int Y);
-  static int  getHorRangeNext(const std::set<myPoint>&,const int,const int,const int);
-  static int  getVerRangeNext(const std::set<myPoint>&,const int,const int,const int);
-  static void print(const std::set<myPoint> points, int min_x = 0, int min_y = 0);
+  static bool findPkPlPm(const std::set<bPoint>&, bPoint&, bPoint&, bPoint&);
+  static bool findVkVlVm(const std::set<bPoint>&, bPoint&, bPoint&, bPoint&);
+  static void F(std::set<bPoint>& points, int X, int Y);
+  static int  getHorRangeNext(const std::set<bPoint>&,const int,const int,const int);
+  static int  getVerRangeNext(const std::set<bPoint>&,const int,const int,const int);
+  static void print(const std::set<bPoint> points, int min_x = 0, int min_y = 0);
 };
 
 // ============================================
@@ -59,7 +60,7 @@ private:
 // Output : boxes
 template<class Type>
 inline bool
-PTR::polygon2Rect(std::vector<myPoint>& vpoints, std::vector<Type>& boxes)
+PTR::polygon2Rect(std::vector<bPoint>& vpoints, std::vector<Type>& boxes)
 //{{{
 {
 #ifdef _DEBUG_PTR
@@ -74,12 +75,13 @@ PTR::polygon2Rect(std::vector<myPoint>& vpoints, std::vector<Type>& boxes)
     std::cout << "ERROR| PTR::polygon(), find three continuous points are on a line" << std::endl;
     return false;
   }
+  if (false == isOrthogonal(vpoints)) return false;
 
   // Step 2: iteratively remove box
   while (vpoints.size() > 0)
   {
-    myPoint Pk, Pl, Pm;
-    myPoint Vk, Vl, Vm; // similar to Pk,Pl,Pm, but scan vertical edges now
+    bPoint Pk, Pl, Pm;
+    bPoint Vk, Vl, Vm; // similar to Pk,Pl,Pm, but scan vertical edges now
 
     if (false == findPkPlPm(vpoints, Pk, Pl, Pm))
     {
@@ -125,7 +127,7 @@ PTR::polygon2Rect(std::vector<myPoint>& vpoints, std::vector<Type>& boxes)
 //  Pm: 1) Xk <= Xm < Xl
 //      2) Ym is lowest but Ym > Yk (Yk == Yl)
 inline bool
-PTR::findPkPlPm(const std::vector<myPoint>& points, myPoint& Pk, myPoint& Pl, myPoint& Pm)
+PTR::findPkPlPm(const std::vector<bPoint>& points, bPoint& Pk, bPoint& Pl, bPoint& Pm)
 //{{{
 {
   if (points.size() < 4)
@@ -195,7 +197,7 @@ PTR::findPkPlPm(const std::vector<myPoint>& points, myPoint& Pk, myPoint& Pl, my
 //}}}
 
 inline bool
-PTR::findPkPlPm(const std::set<myPoint>& points, myPoint& Pk, myPoint& Pl, myPoint& Pm)
+PTR::findPkPlPm(const std::set<bPoint>& points, bPoint& Pk, bPoint& Pl, bPoint& Pm)
 //{{{
 {
   if (points.size() < 4)
@@ -210,7 +212,7 @@ PTR::findPkPlPm(const std::set<myPoint>& points, myPoint& Pk, myPoint& Pl, myPoi
   int min_x = INT_MAX; int next_x = INT_MAX;
 
   // first round, determine Pk, Pl
-  for (std::set<myPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
+  for (std::set<bPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
   {
     int x = sitr->x(), y = sitr->y();
     if (y < min_y)
@@ -248,7 +250,7 @@ PTR::findPkPlPm(const std::set<myPoint>& points, myPoint& Pk, myPoint& Pl, myPoi
 
   // third round, determine Xm
   int Xm = INT_MAX;
-  for (std::set<myPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
+  for (std::set<bPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
   {
     int x = sitr->x(), y = sitr->y();
     if (y != Ym) continue;
@@ -259,7 +261,7 @@ PTR::findPkPlPm(const std::set<myPoint>& points, myPoint& Pk, myPoint& Pl, myPoi
   if (Ym >= INT_MAX || Xm >= INT_MAX)
   {
     std::cout << "DEBUG| PTR::findPkPlPm(), output the points" << std::endl;
-    for (std::set<myPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
+    for (std::set<bPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
     {
       std::cout << sitr->x() << ", " << sitr->y() << std::endl;
     } // for sitr
@@ -277,7 +279,7 @@ PTR::findPkPlPm(const std::set<myPoint>& points, myPoint& Pk, myPoint& Pl, myPoi
 
 // Similar to findPkPlPm, but try to find cut along with vertical edges
 inline bool
-PTR::findVkVlVm(const std::vector<myPoint>& points, myPoint& Vk, myPoint& Vl, myPoint& Vm)
+PTR::findVkVlVm(const std::vector<bPoint>& points, bPoint& Vk, bPoint& Vl, bPoint& Vm)
 //{{{
 {
   if (points.size() < 4) return false;
@@ -344,7 +346,7 @@ PTR::findVkVlVm(const std::vector<myPoint>& points, myPoint& Vk, myPoint& Vl, my
 //}}}
 
 inline bool
-PTR::findVkVlVm(const std::set<myPoint>& points, myPoint& Vk, myPoint& Vl, myPoint& Vm)
+PTR::findVkVlVm(const std::set<bPoint>& points, bPoint& Vk, bPoint& Vl, bPoint& Vm)
 //{{{
 {
   if (points.size() < 4) return false;
@@ -353,7 +355,7 @@ PTR::findVkVlVm(const std::set<myPoint>& points, myPoint& Vk, myPoint& Vl, myPoi
   int min_y = INT_MAX, next_y = INT_MAX;
 
   // Step 1: 1st round, determine Vk, Vl
-  for (std::set<myPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
+  for (std::set<bPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
   {
     int x = sitr->x(), y = sitr->y();
     if (x < min_x)
@@ -382,7 +384,7 @@ PTR::findVkVlVm(const std::set<myPoint>& points, myPoint& Vk, myPoint& Vl, myPoi
   int Xm = getVerRangeNext(points, Vk.y(), Vl.y(), min_x);
 #if 1
   int next_x = INT_MAX;
-  for (std::set<myPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
+  for (std::set<bPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
   {
     int x = sitr->x(), y = sitr->y();
     if (x <= min_x)                continue;
@@ -395,7 +397,7 @@ PTR::findVkVlVm(const std::set<myPoint>& points, myPoint& Vk, myPoint& Vl, myPoi
 
   // Step 3: determine Ym
   int Ym = INT_MAX;
-  for (std::set<myPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
+  for (std::set<bPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
   {
     int x = sitr->x(), y = sitr->y();
     if (x != Xm) continue;
@@ -413,11 +415,11 @@ PTR::findVkVlVm(const std::set<myPoint>& points, myPoint& Vk, myPoint& Vl, myPoi
 
 // F function
 inline void
-PTR::F(std::vector<myPoint>& points, int X, int Y)
+PTR::F(std::vector<bPoint>& points, int X, int Y)
 //{{{
 {
-  myPoint point(X, Y);
-  std::vector<myPoint>::iterator itr = find(points.begin(), points.end(), point);
+  bPoint point(X, Y);
+  std::vector<bPoint>::iterator itr = find(points.begin(), points.end(), point);
   //points.find(point);
   
   if (itr == points.end())  // can NOT find, insert point(X, Y)
@@ -448,11 +450,11 @@ PTR::F(std::vector<myPoint>& points, int X, int Y)
 //}}}
 
 inline void
-PTR::F(std::set<myPoint>& points, int X, int Y)
+PTR::F(std::set<bPoint>& points, int X, int Y)
 //{{{
 {
-  myPoint point(X, Y);
-  std::set<myPoint>::iterator itr = find(points.begin(), points.end(), point);
+  bPoint point(X, Y);
+  std::set<bPoint>::iterator itr = find(points.begin(), points.end(), point);
   //points.find(point);
   
   if (itr == points.end())  // can NOT find, insert point(X, Y)
@@ -486,7 +488,7 @@ PTR::F(std::set<myPoint>& points, int X, int Y)
 // use kind of stupid method
 // smooth the polygons, i.e., reduce the corner point number
 inline void
-PTR::compress(std::vector<myPoint>& points, int difference)
+PTR::compress(std::vector<bPoint>& points, int difference)
 //{{{
 {
   bool bmodify = true;
@@ -523,7 +525,7 @@ PTR::compress(std::vector<myPoint>& points, int difference)
 // 1) next_y > min_y
 // 2) the point is in the range of [x1, x2]
 inline int
-PTR::getHorRangeNext(const std::vector<myPoint>& points,
+PTR::getHorRangeNext(const std::vector<bPoint>& points,
                      const int x1, const int x2, const int min_y)
 //{{{
 {
@@ -544,13 +546,13 @@ PTR::getHorRangeNext(const std::vector<myPoint>& points,
 //}}}
 
 inline int
-PTR::getHorRangeNext(const std::set<myPoint>& points,
+PTR::getHorRangeNext(const std::set<bPoint>& points,
                      const int x1, const int x2, const int min_y)
 //{{{
 {
   int next_y = INT_MAX / 2;
 
-  for (std::set<myPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
+  for (std::set<bPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
   {
     int x = sitr->x(), y = sitr->y();
     if (x<x1 || x>x2) continue;
@@ -569,7 +571,7 @@ PTR::getHorRangeNext(const std::set<myPoint>& points,
 // 1) next_x > min_x
 // 2) the point is in the range of [y1, y2]
 inline int
-PTR::getVerRangeNext(const std::vector<myPoint>& points,
+PTR::getVerRangeNext(const std::vector<bPoint>& points,
                      const int y1, const int y2, const int min_x)
 //{{{
 {
@@ -590,13 +592,13 @@ PTR::getVerRangeNext(const std::vector<myPoint>& points,
 //}}}
 
 inline int
-PTR::getVerRangeNext(const std::set<myPoint>& points,
+PTR::getVerRangeNext(const std::set<bPoint>& points,
                      const int y1, const int y2, const int min_x)
 //{{{
 {
   int next_x = INT_MAX / 2;
   
-  for (std::set<myPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
+  for (std::set<bPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
   {
     int x = sitr->x(), y = sitr->y();
     if (y<y1 || y>y2) continue;
@@ -613,7 +615,7 @@ PTR::getVerRangeNext(const std::set<myPoint>& points,
 
 // check whether three continuous points are on the same line
 inline bool
-PTR::findLine(const std::vector<myPoint> points)
+PTR::findLine(const std::vector<bPoint> points)
 //{{{
 {
   for (int i=0; i<points.size(); i++)
@@ -641,8 +643,23 @@ PTR::findLine(const std::vector<myPoint> points)
 //}}}
 
 
+// check whether input is orthogonal shape
+inline bool
+PTR::isOrthogonal(const std::vector<bPoint> points)
+{
+  for (int i=0; i<points.size()-1; i++)
+  {
+    int x1 = points[i].x(), x2 = points[i+1].x();
+    int y1 = points[i].y(), y2 = points[i+1].y();
+    if (x1 != x2 && y1 != y2) return false;
+  } // for i
+  return true;
+}
+
+
+
 inline void
-PTR::print(const std::vector<myPoint> points, int min_x, int min_y)
+PTR::print(const std::vector<bPoint> points, int min_x, int min_y)
 //{{{
 {
   printf ("points: ");
@@ -657,11 +674,11 @@ PTR::print(const std::vector<myPoint> points, int min_x, int min_y)
 //}}}
 
 inline void
-PTR::print(const std::set<myPoint> points, int min_x, int min_y)
+PTR::print(const std::set<bPoint> points, int min_x, int min_y)
 //{{{
 {
   printf ("points: ");
-  for (std::set<myPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
+  for (std::set<bPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
   {
     int x = sitr->x(), y = sitr->y();
     printf ("(%d, %d) ", x-min_x, y-min_y);
@@ -671,6 +688,14 @@ PTR::print(const std::set<myPoint> points, int min_x, int min_y)
 //}}}
 
 } // namespace bLib
+
+
+/*
+// ==== Implementation Logs:
+//
+// 07/2014: change myPoint==>bPoint
+// 
+*/
 
 #endif
 

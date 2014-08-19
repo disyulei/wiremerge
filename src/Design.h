@@ -40,8 +40,8 @@ protected:
   std::string  m_output;   // output file name
   double       m_ratio;
 
-  std::vector< std::vector<bLib::myShape*> >     m_Metals;    // input myShape
-  std::vector< std::vector< std::vector<int> > > m_mergeIds;  // group some myShape together
+  std::vector< std::vector<bLib::bShape*> >      m_Metals;    // input bShape
+  std::vector< std::vector< std::vector<int> > > m_mergeIds;  // group some bShape together
   std::map<int, int>                             m_layer2Id;
 
   // local functions

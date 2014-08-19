@@ -37,8 +37,9 @@ public:
   bLibRTree() {}
 
   void   insert(Type*);
+  void   clear() {m_tree.RemoveAll();};
   int    getSize();  // count the data in the tree, but slow
-  std::vector<Type*>* search(myBox* bbox);
+  std::vector<Type*>* search(bBox* bbox);
   std::vector<Type*>* search(const int, const int, const int, const int);
 
   static std::vector<Type*> s_searchResult;
@@ -67,7 +68,7 @@ bLibRTree<Type>::insert(Type* pshape)
 
 template<class Type>
 inline std::vector<Type*>*
-bLibRTree<Type>::search(myBox* bbox)
+bLibRTree<Type>::search(bBox* bbox)
 {
   RtreeRect rect(bbox->x1(), bbox->y1(), bbox->x2(), bbox->y2());
   s_searchResult.clear();

@@ -4,7 +4,7 @@
 // ============================================================== //
 //   Library for geometrical shapes 
 //
-//   Class       : mySegment, myBox, myShape
+//   Class       : bBox, bShape
 //   Author      : Bei Yu
 //   Last update : 05/2014
 // ============================================================== //
@@ -20,28 +20,30 @@ namespace bLib
 {
 
 // ==========================================
-//            myBox
+//            bBox
 // ==========================================
-class myBox
+class bBox
 {
 public:
-  myBox(int x1=-1, int y1=-1, int x2=-1, int y2=-1); 
+  bBox(int x1=-1, int y1=-1, int x2=-1, int y2=-1); 
 
   // get functions
-  int   getId() const {return m_id;}
-  int   x1()    const {return m_x1;}
-  int   x2()    const {return m_x2;}
-  int   y1()    const {return m_y1;}
-  int   y2()    const {return m_y2;}
-  int   dx()    const {return x2() - x1();}
-  int   dy()    const {return y2() - y1();}
-  int   getArea()     {return dx()*dy();}
-  bool  isHor()       {return (dx() >= dy());}
-  int   xCenter()     {return (x1()+x2())/2;}
-  int   yCenter()     {return (y1()+y2())/2;}
-  bool  overlaps(myBox*, bool=true);
-  int   getDist2Box(myBox*, int=12345678);
-  int   getDrct2Box(myBox*);
+  int   getId()    const {return m_id;}
+  int   x1()       const {return m_x1;}
+  int   x2()       const {return m_x2;}
+  int   y1()       const {return m_y1;}
+  int   y2()       const {return m_y2;}
+  int   dx()       const {return x2() - x1();}
+  int   dy()       const {return y2() - y1();}
+  int   getArea()  const {return dx()*dy();}
+  int   getWidth() const {return std::min(dx(), dy());}
+  bool  isHor()          {return (dx() >= dy());}
+  int   xCenter()        {return (x1()+x2())/2;}
+  int   yCenter()        {return (y1()+y2())/2;}
+  bool  overlaps(bBox*, bool=true);
+  int   getDist2Box(const bBox*, int=12345678) const;
+  int   getDrct2Box(bBox*);
+  void  intersection(bBox&,int&,int&,int&,int&);
 
   // set functions
   void  set(int, int, int, int);
@@ -52,18 +54,18 @@ protected:
   int   m_id;
 };
 inline
-std::ostream& operator << (std::ostream& out, myBox& mybox)
+std::ostream& operator << (std::ostream& out, bBox& mybox)
 {
   out<<mybox.getId()<<"| ("<<mybox.x1()<<","<<mybox.y1()<<")  ("<<mybox.x2()<<","<<mybox.y2()<<")";
   return out;
 }
 
 // =============================================
-//        functions for myBox
+//        functions for bBox
 // =============================================
 //{{{
 inline
-myBox::myBox(int x1, int y1, int x2, int y2):m_x1(x1), m_y1(y1), m_x2(x2), m_y2(y2)
+bBox::bBox(int x1, int y1, int x2, int y2):m_x1(x1), m_y1(y1), m_x2(x2), m_y2(y2)
 {
   if (m_x1 > m_x2) std::swap(m_x1, m_x2);
   if (m_y1 > m_y2) std::swap(m_y1, m_y2);
@@ -71,7 +73,7 @@ myBox::myBox(int x1, int y1, int x2, int y2):m_x1(x1), m_y1(y1), m_x2(x2), m_y2(
 }
 
 inline void
-myBox::set(int x1, int y1, int x2, int y2)
+bBox::set(int x1, int y1, int x2, int y2)
 {
   m_x1 = x1;
   m_y1 = y1;
@@ -82,7 +84,7 @@ myBox::set(int x1, int y1, int x2, int y2)
 }
 
 inline bool
-myBox::overlaps(myBox* box, bool flag)
+bBox::overlaps(bBox* box, bool flag)
 //{{{
 {
   int width1  = dx();
@@ -104,13 +106,22 @@ myBox::overlaps(myBox* box, bool flag)
 }
 //}}}
 
+inline void
+bBox::intersection(bBox& pbox, int& xx1, int& yy1, int& xx2, int& yy2)
+{
+  xx1 = std::max(x1(), pbox.x1());
+  yy1 = std::max(y1(), pbox.y1());
+  xx2 = std::min(x2(), pbox.x2());
+  yy2 = std::min(y2(), pbox.y2());
+}
+
 // 7 | 3 | 6
 // __|___|__
 // 1 | 8 | 2
 // __|___|__
 // 4 | 0 | 5
 inline int
-myBox::getDrct2Box(myBox* box2)
+bBox::getDrct2Box(bBox* box2)
 //{{{
 {
   int oct;
@@ -139,7 +150,7 @@ myBox::getDrct2Box(myBox* box2)
 //}}}
 
 inline int
-myBox::getDist2Box(myBox* box2, int MAX_DIST)
+bBox::getDist2Box(const bBox* box2, int MAX_DIST) const
 //{{{
 {
   int oct;
@@ -240,108 +251,121 @@ myBox::getDist2Box(myBox* box2, int MAX_DIST)
 
 
 // ==========================================
-//              myShape
+//              bShape
 // ==========================================
-class myShape
+class bShape
 {
 public:
-  myShape(int,int,int,int);
-  ~myShape();
+  bShape(int,int,int,int);
+  ~bShape();
 
   // ==== get functions
-  int    getId()  const  {return m_id;}
-  int    x1()     const  {return m_realBox->x1();}
-  int    x2()     const  {return m_realBox->x2();}
-  int    y1()     const  {return m_realBox->y1();}
-  int    y2()     const  {return m_realBox->y2();}
-  int    dx()     const  {return x2() - x1();}
-  int    dy()     const  {return y2() - y1();}
-  int    width()  const  {return x2() - x1();}
-  int    height() const  {return y2() - y1();}
-  bool   isHor()  const  {return width() >= height();}
-  int    getPointNum()   {return m_vpoints.size();}
+  int    getId()   const  {return m_id;}
+  int    x1()      const  {return m_realBox->x1();}
+  int    x2()      const  {return m_realBox->x2();}
+  int    y1()      const  {return m_realBox->y1();}
+  int    y2()      const  {return m_realBox->y2();}
+  int    dx()      const  {return x2() - x1();}
+  int    dy()      const  {return y2() - y1();}
+  int    xCenter() const  {return (x1()+x2())/2;}
+  int    yCenter() const  {return (y1()+y2())/2;}
+  int    width()   const  {return x2() - x1();}
+  int    height()  const  {return y2() - y1();}
+  bool   isHor()   const  {return width() >= height();}
+  int    getPointNum()    {return m_vpoints.size();}
   int    getPointX(int);
   int    getPointY(int);
   int    getArea();
+  std::vector<bPoint> const& getVPoints() const {return m_vpoints;}
 
   // ==== set functions
   void   setId(int id)    {m_id = id;}
-  void   setPoints(const std::vector<myPoint>&);
-  void   setRealBoxes(const std::vector<myBox>&);
+  void   setPoints(const std::vector<bPoint>&);
+  void   setBox(int, int, int, int);
+  void   setRealBoxes(const std::vector<bBox>&);
 
-  std::vector<myBox*>   m_realBoxes;  // rectangles after input
+  std::vector<bBox*>   m_realBoxes;  // rectangles after input
 
 protected:
   void   points2Boxes();              // given m_vpoints, generate m_realBoxes
 
   int                   m_id;
-  myBox*                m_realBox;    // for "polygon" store its bounding box
-  std::vector<myPoint>  m_vpoints;    // clock-wise points to represent polygon
+  bBox*                 m_realBox;    // for "polygon" store its bounding box
+  std::vector<bPoint>   m_vpoints;    // clock-wise points to represent polygon
 };
 inline
-std::ostream& operator << (std::ostream& out, myShape& myshape)
+std::ostream& operator << (std::ostream& out, bShape& myshape)
 {
   out<<myshape.getId()<<": ("<<myshape.x1()<<","<<myshape.y1()<<") ("<<myshape.x2()<<","<<myshape.y2()<<") ";
   return out;
 }
 
 // =============================================
-//        functions for myShape
+//        functions for bShape
 // =============================================
 //{{{
 inline
-myShape::myShape(int xl, int yl, int xh, int yh)
+bShape::bShape(int xl, int yl, int xh, int yh)
 {
   m_id = -1;
-  m_realBox = new myBox(xl, yl, xh, yh);
+  m_realBox = new bBox(xl, yl, xh, yh);
   m_realBoxes.clear();
 }
 
 inline
-myShape::~myShape()
+bShape::~bShape()
 {
   delete m_realBox;
   for (int i=0; i<m_realBoxes.size(); i++) delete m_realBoxes[i]; m_realBoxes.clear();
 }
 
 inline int
-myShape::getPointX(int id)
+bShape::getPointX(int id)
 {
   assert (id < m_vpoints.size());
   return m_vpoints[id].x();
 }
 
 inline int
-myShape::getPointY(int id)
+bShape::getPointY(int id)
 {
   assert (id < m_vpoints.size());
   return m_vpoints[id].y();
 }
 
 inline void
-myShape::setPoints(const std::vector<myPoint>& vpoints)
+bShape::setPoints(const std::vector<bPoint>& vpoints)
 {
   int size = vpoints.size();
   for (int i=0; i<size; i++)
   {
-    myPoint point(vpoints[i].x(), vpoints[i].y());
+    bPoint point(vpoints[i].x(), vpoints[i].y());
     m_vpoints.push_back( point );
   } // for i
 }
 
+inline void
+bShape::setBox(int xl, int yl, int xh, int yh)
+{
+  m_realBox->set(xl, yl, xh, yh);
+  assert(m_realBox->x1() == xl);
+  assert(m_realBox->x2() == xh);
+  assert(m_realBox->y1() == yl);
+}
+
 // given m_vpoints, generate m_realBoxes
 inline void
-myShape::setRealBoxes(const std::vector<myBox>& vBoxes)
+bShape::setRealBoxes(const std::vector<bBox>& vBoxes)
 {
   for (int i=0; i<vBoxes.size(); i++)
   {
-    myBox* pmybox = new myBox( vBoxes[i] );
+    bBox* pmybox = new bBox( vBoxes[i] );
     m_realBoxes.push_back(pmybox);
   }
 }
 
 inline int
-myShape::getArea()
+bShape::getArea()
 {
   int result = 0;
   for (int i=0; i<m_realBoxes.size(); i++) result += m_realBoxes[i]->getArea();
@@ -355,19 +379,19 @@ myShape::getArea()
 //       global geometrical functions
 // =============================================
 inline int
-box2BoxDirection(myBox* box1, myBox* box2)
+box2BoxDirection(bBox* box1, bBox* box2)
 {
   return box1->getDrct2Box(box2);
 }
 
 inline int
-box2BoxDist(myBox* box1, myBox* box2, int MAX_DIST=12345678)
+box2BoxDist(const bBox* box1, const bBox* box2, int MAX_DIST=12345678)
 {
   return box1->getDist2Box(box2, MAX_DIST);
 }
 
 inline int
-box2BoxDistX(myBox* box1, myBox* box2)
+box2BoxDistX(bBox* box1, bBox* box2)
 {
   int direction = box2BoxDirection(box1, box2);
   switch (direction)
@@ -381,7 +405,7 @@ box2BoxDistX(myBox* box1, myBox* box2)
 }
 
 inline int
-box2BoxDistY(myBox* box1, myBox* box2)
+box2BoxDistY(bBox* box1, bBox* box2)
 {
   assert( box1->x2() <= box2->x1() );
   return box2->x1() - box1->x2();
@@ -392,6 +416,8 @@ box2BoxDistY(myBox* box1, myBox* box2)
 /*
 // ==== Implementation Log:
 //
+// 07/2014: rename myBox==>bBox, myShape==>bShape
+// 
 // 05/2014: introduce namespace bLib
 //
 */

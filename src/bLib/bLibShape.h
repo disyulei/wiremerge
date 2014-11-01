@@ -37,13 +37,14 @@ public:
   int   dy()       const {return y2() - y1();}
   int   getArea()  const {return dx()*dy();}
   int   getWidth() const {return std::min(dx(), dy());}
-  bool  isHor()          {return (dx() >= dy());}
   int   xCenter()        {return (x1()+x2())/2;}
   int   yCenter()        {return (y1()+y2())/2;}
-  bool  overlaps(bBox*, bool=true);
   int   getDist2Box(const bBox*, int=12345678) const;
   int   getDrct2Box(bBox*);
   void  intersection(bBox&,int&,int&,int&,int&);
+  bool  isHor()          {return (dx() >= dy());}
+  bool  overlaps(bBox*, bool=true);
+  bool  isContain(const int, const int) const;
 
   // set functions
   void  set(int, int, int, int);
@@ -72,6 +73,13 @@ bBox::bBox(int x1, int y1, int x2, int y2):m_x1(x1), m_y1(y1), m_x2(x2), m_y2(y2
   m_id = -1;
 }
 
+inline bool
+bBox::isContain(const int x, const int y) const
+{
+  if (m_x1!=x && m_x2!=x) return false;
+  if (m_y1!=y && m_y2!=y) return false;
+  return true;
+}
 inline void
 bBox::set(int x1, int y1, int x2, int y2)
 {

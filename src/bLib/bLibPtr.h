@@ -4,19 +4,19 @@
 // ===================================================================
 //    class       : PTR
 //    author      : Bei Yu
-//    last update : 07/2014
+//    last update : 11/2014
 //
 //  Refer to K.D.Gourley and D.M. Green,
 //  "A Polygon-to-Rectangle Conversion Algorithm", IEEE 1983
 //
 // ===================================================================
 
+#include "bLibBase.h"
 #include "bLibPoint.h"
 #include <iostream>
 #include <algorithm>  // min()
 #include <vector>
 #include <climits>
-#include <set>
 #include <cstdio>
 
 namespace bLib
@@ -30,24 +30,14 @@ public:
   static bool polygon2Rect(std::vector<bPoint>& points, std::vector<Type> & vBoxes);
 
 private:
-  // operations on std::vector
-  static void compress(std::vector<bPoint> & points, int difference = 5);
+  static void removeDuplicate(std::vector<bPoint>&);
   static bool findLine(const std::vector<bPoint> points);
-  static bool isOrthogonal(const std::vector<bPoint> points);
   static bool findPkPlPm(const std::vector<bPoint>&, bPoint&, bPoint&, bPoint&);
   static bool findVkVlVm(const std::vector<bPoint>&, bPoint&, bPoint&, bPoint&);
   static void F(std::vector<bPoint>& points, int X, int Y);
   static int  getHorRangeNext(const std::vector<bPoint>&,const int,const int,const int);
   static int  getVerRangeNext(const std::vector<bPoint>&,const int,const int,const int);
   static void print(const std::vector<bPoint> points, int min_x = 0, int min_y = 0);
-
-  // operations on std::set
-  static bool findPkPlPm(const std::set<bPoint>&, bPoint&, bPoint&, bPoint&);
-  static bool findVkVlVm(const std::set<bPoint>&, bPoint&, bPoint&, bPoint&);
-  static void F(std::set<bPoint>& points, int X, int Y);
-  static int  getHorRangeNext(const std::set<bPoint>&,const int,const int,const int);
-  static int  getVerRangeNext(const std::set<bPoint>&,const int,const int,const int);
-  static void print(const std::set<bPoint> points, int min_x = 0, int min_y = 0);
 };
 
 // ============================================
@@ -69,13 +59,25 @@ PTR::polygon2Rect(std::vector<bPoint>& vpoints, std::vector<Type>& boxes)
 #endif
 
   // Step 1: check polygon
-  compress(vpoints, 0);   // smooth polygon, i.e., reduce corner point number
-  if (true == findLine(vpoints))
+  int point_num = vpoints.size();
+  if (vpoints[0]==vpoints[point_num-1]) vpoints.resize( point_num-1 );
+  for (int i=1; i<vpoints.size(); i++)
   {
-    std::cout << "ERROR| PTR::polygon(), find three continuous points are on a line" << std::endl;
+    int x1 = vpoints[i-1].x(), x2 = vpoints[i].x();
+    int y1 = vpoints[i-1].y(), y2 = vpoints[i].y();
+    if (x1==x2 || y1==y2) continue;
+    std::cout << "ERROR| PTR::polygon2Rect(), can only support rectlinear polygon" << std::endl;
+    print(vpoints);
     return false;
   }
-  if (false == isOrthogonal(vpoints)) return false;
+  if (true == findLine(vpoints))
+  {
+    std::cout << "ERROR| PTR::polygon2Rect(), find three continuous points are on a line" << std::endl;
+    print(vpoints);
+    return false;
+  }
+  removeDuplicate(vpoints);  // after this function, the order of points canNOT be maintained
+  
 
   // Step 2: iteratively remove box
   while (vpoints.size() > 0)
@@ -99,9 +101,20 @@ PTR::polygon2Rect(std::vector<bPoint>& vpoints, std::vector<Type>& boxes)
     int slide_x = getVerRangeNext(vpoints, Vk.y(), Vl.y(), Vm.x()) - Vm.x();
 
     Type box;
+    //printf("slide_x=%d, slide_y=%d\n", slide_x, slide_y);
+    //printf("%d, %d, %d, %d\n", Pk.x(), Pk.y(), Pl.x(), Pm.y());
+    //printf("%d, %d, %d, %d\n", Vk.x(), Vk.y(), Vm.x(), Vl.y());
+    #ifdef _DEBUG_PTR
+    if (slide_y >= slide_x) printf("DEBUG| select Pk, Pl. Pm\n");
+    else                    printf("DEBUG| select Vk, Vl. Vm\n");
+    #endif
     if (slide_y >= slide_x) box.set(Pk.x(), Pk.y(), Pl.x(), Pm.y());
     else                    box.set(Vk.x(), Vk.y(), Vm.x(), Vl.y());
+    if (box.x2()>INT_MAX-1000 || box.y2()>INT_MAX-1000) return false;
     boxes.push_back(box);
+    #ifdef _DEBUG_PTR
+    printf ("DEBUG| add box (%d %d), (%d %d) into output vector<myBox>\n", box.x1(), box.y1(), box.x2(), box.y2());
+    #endif
     
     F(vpoints, box.x1(), box.y1());
     F(vpoints, box.x1(), box.y2());
@@ -109,8 +122,7 @@ PTR::polygon2Rect(std::vector<bPoint>& vpoints, std::vector<Type>& boxes)
     F(vpoints, box.x2(), box.y2());
 
     #ifdef _DEBUG_PTR
-    printf ("DEBUG| add myBox (%d %d), (%d %d) into output vector<myBox>\n", box.x1(), box.y1(), box.x2(), box.y2());
-    printf ("DEBUG| new points: \n");
+    printf ("DEBUG| current %d points: \n", (int)vpoints.size());
     print(vpoints);
     printf ("\n");
     #endif
@@ -120,6 +132,19 @@ PTR::polygon2Rect(std::vector<bPoint>& vpoints, std::vector<Type>& boxes)
 }
 //}}}
 
+
+inline void
+PTR::removeDuplicate(std::vector<bPoint>& vpoints)
+{
+    std::sort(vpoints.begin(), vpoints.end(), byXY);
+    for (int i=1; i<vpoints.size(); i++)
+    {
+        if (vpoints[i].x() != vpoints[i-1].x()) continue;
+        if (vpoints[i].y() != vpoints[i-1].y()) continue;
+        erase_fast(vpoints, i-1);
+        erase_fast(vpoints, i);
+    }
+}
 
 //  Given points, find Pk, Pl and Pm
 //  Pk: the leftmost of the lowest points
@@ -196,86 +221,6 @@ PTR::findPkPlPm(const std::vector<bPoint>& points, bPoint& Pk, bPoint& Pl, bPoin
 }
 //}}}
 
-inline bool
-PTR::findPkPlPm(const std::set<bPoint>& points, bPoint& Pk, bPoint& Pl, bPoint& Pm)
-//{{{
-{
-  if (points.size() < 4)
-  {
-  #ifdef _DEBUG_PTR
-    printf ("DEBUG| points.size() = %d\n", (int)points.size());
-  #endif
-    return false;
-  }
-
-  int min_y = INT_MAX; 
-  int min_x = INT_MAX; int next_x = INT_MAX;
-
-  // first round, determine Pk, Pl
-  for (std::set<bPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
-  {
-    int x = sitr->x(), y = sitr->y();
-    if (y < min_y)
-    {
-      min_y = y;
-      min_x = next_x = INT_MAX;
-    }
-    if (y > min_y) continue;
-
-    // here: y == min_y
-    if (x < min_x)
-    {
-      next_x = min_x;
-      min_x = x;
-    }
-    else if (x > min_x && x < next_x)
-    {
-      next_x = x;
-    }
-  }
-  Pk.set(min_x, min_y);
-  Pl.set(next_x, min_y);
-
-  // second round, determine Ym (next_y)
-  int Ym = getHorRangeNext(points, Pk.x(), Pl.x(), min_y);
-  //int Ym = INT_MAX;
-  //for (int i=0; i<points.size(); i++)
-  //{
-  //  int x = points[i].x();
-  //  int y = points[i].y();
-  //  if (y <= min_y) continue;
-  //  if (x < Pk.x() || x >= Pl.x()) continue;
-  //  if (Ym > y) Ym = y;
-  //}
-
-  // third round, determine Xm
-  int Xm = INT_MAX;
-  for (std::set<bPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
-  {
-    int x = sitr->x(), y = sitr->y();
-    if (y != Ym) continue;
-    if (Xm > x) Xm = x;
-  }
-
-  #ifdef _DEBUG_PTR
-  if (Ym >= INT_MAX || Xm >= INT_MAX)
-  {
-    std::cout << "DEBUG| PTR::findPkPlPm(), output the points" << std::endl;
-    for (std::set<bPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
-    {
-      std::cout << sitr->x() << ", " << sitr->y() << std::endl;
-    } // for sitr
-  }
-  #endif
-  if (Ym >= INT_MAX) return false;
-  if (Xm >= INT_MAX) return false;
-
-  Pm.set(Xm, Ym);
-  return true;
-}
-//}}}
-
-
 
 // Similar to findPkPlPm, but try to find cut along with vertical edges
 inline bool
@@ -345,79 +290,16 @@ PTR::findVkVlVm(const std::vector<bPoint>& points, bPoint& Vk, bPoint& Vl, bPoin
 }
 //}}}
 
-inline bool
-PTR::findVkVlVm(const std::set<bPoint>& points, bPoint& Vk, bPoint& Vl, bPoint& Vm)
-//{{{
-{
-  if (points.size() < 4) return false;
-
-  int min_x = INT_MAX;
-  int min_y = INT_MAX, next_y = INT_MAX;
-
-  // Step 1: 1st round, determine Vk, Vl
-  for (std::set<bPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
-  {
-    int x = sitr->x(), y = sitr->y();
-    if (x < min_x)
-    {
-      min_x = x;
-      min_y = next_y = INT_MAX;
-    }
-    if (x > min_x) continue;
-
-    // here: x == min_x
-    if (y < min_y)
-    {
-      next_y = min_y;
-      min_y = y;
-    }
-    else if (y > min_y && y < next_y)
-    {
-      next_y = y;
-    }
-  } // for i
-  Vk.set(min_x, min_y);
-  Vl.set(min_x, next_y);
-
-
-  // Step 2: determine (next_x)
-  int Xm = getVerRangeNext(points, Vk.y(), Vl.y(), min_x);
-#if 1
-  int next_x = INT_MAX;
-  for (std::set<bPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
-  {
-    int x = sitr->x(), y = sitr->y();
-    if (x <= min_x)                continue;
-    if (y < Vk.y() || y > Vl.y()) continue;
-    if (next_x > x) next_x = x;
-  }
-  assert(Xm == next_x);
-#endif
-
-
-  // Step 3: determine Ym
-  int Ym = INT_MAX;
-  for (std::set<bPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
-  {
-    int x = sitr->x(), y = sitr->y();
-    if (x != Xm) continue;
-    if (Ym > y) Ym = y;
-  }
-
-  if (Xm >= INT_MAX) return false;
-  if (Ym >= INT_MAX) return false;
-
-  Vm.set(Xm, Ym);
-  return true;
-}
-//}}}
-
 
 // F function
 inline void
 PTR::F(std::vector<bPoint>& points, int X, int Y)
 //{{{
 {
+  #ifdef _DEBUG_PTR
+  printf("DEBUG| PTR::F(), x=%d, y=%d\n", X, Y);
+  #endif
+
   bPoint point(X, Y);
   std::vector<bPoint>::iterator itr = find(points.begin(), points.end(), point);
   //points.find(point);
@@ -426,97 +308,18 @@ PTR::F(std::vector<bPoint>& points, int X, int Y)
   {
     points.push_back( point );
     #ifdef _DEBUG_PTR
-    printf ("append point (%d, %d) \n", point.x(), point.y());
+    printf ("DEBUG| append point (%d, %d)\n", point.x(), point.y());
     //print(points);
     #endif
   }
   else                      // can find, remove point (X, Y)
   {
-    points.erase( itr );
+    erase_fast(points, itr);
     #ifdef _DEBUG_PTR
-    printf ("remove point (%d, %d) \n", point.x(), point.y());
-    //print(points);
-    #endif
-    #if 1
-    itr = find(itr, points.end(), point);
-    while (itr != points.end())
-    {
-      points.erase( itr );
-      itr = find(itr, points.end(), point);
-    }
-    #endif
-  }
-}
-//}}}
-
-inline void
-PTR::F(std::set<bPoint>& points, int X, int Y)
-//{{{
-{
-  bPoint point(X, Y);
-  std::set<bPoint>::iterator itr = find(points.begin(), points.end(), point);
-  //points.find(point);
-  
-  if (itr == points.end())  // can NOT find, insert point(X, Y)
-  {
-    points.insert( point );
-    #ifdef _DEBUG_PTR
-    printf ("append point (%d, %d) \n", point.x(), point.y());
+    printf ("DEBUG| remove point (%d, %d)\n", point.x(), point.y());
     //print(points);
     #endif
   }
-  else                      // can find, remove point (X, Y)
-  {
-    points.erase( itr );
-    #ifdef _DEBUG_PTR
-    printf ("remove point (%d, %d) \n", point.x(), point.y());
-    //print(points);
-    #endif
-    #if 0
-    itr = find(itr, points.end(), point);
-    while (itr != points.end())
-    {
-      points.erase( itr );
-      itr = find(itr, points.end(), point);
-    }
-    #endif
-  }
-}
-//}}}
-
-
-// use kind of stupid method
-// smooth the polygons, i.e., reduce the corner point number
-inline void
-PTR::compress(std::vector<bPoint>& points, int difference)
-//{{{
-{
-  bool bmodify = true;
-  while (true == bmodify)
-  {
-    bmodify = false;
-    for (int i = 0; i<points.size(); i++)
-    {
-      int x1 = points[i].x();
-      int y1 = points[i].y();
-      for (int j=i+1; j<points.size(); j++)
-      {
-        int x2 = points[j].x();  int y2 = points[j].y();
-        if ( x1 != x2 && abs(x1 - x2) <= difference )
-        {
-          points[i].set(std::min(x1, x2), y1);
-          points[j].set(std::min(x1, x2), y2);
-          bmodify = true;
-        }
-        if ( y1 != y2 && abs(y1 - y2) <= difference )
-        {
-          points[i].set(x1, std::min(y1, y2));
-          points[j].set(x2, std::min(y1, y2));
-          bmodify = true;
-        }
-      } // for j
-    } // for i
-  } // while (bmodify)
 }
 //}}}
 
@@ -545,27 +348,6 @@ PTR::getHorRangeNext(const std::vector<bPoint>& points,
 }
 //}}}
 
-inline int
-PTR::getHorRangeNext(const std::set<bPoint>& points,
-                     const int x1, const int x2, const int min_y)
-//{{{
-{
-  int next_y = INT_MAX / 2;
-
-  for (std::set<bPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
-  {
-    int x = sitr->x(), y = sitr->y();
-    if (x<x1 || x>x2) continue;
-    if (y <= min_y)   continue;
-    if (y >= next_y)  continue;  
-
-    next_y = y;
-  } // for i
-
-  return next_y;
-}
-//}}}
-
 
 // find a min value next_x, s.t.,
 // 1) next_x > min_x
@@ -580,27 +362,6 @@ PTR::getVerRangeNext(const std::vector<bPoint>& points,
   for (int i=0; i<points.size(); i++)
   {
     int x = points[i].x(), y = points[i].y();
-    if (y<y1 || y>y2) continue;
-    if (x <= min_x)   continue;
-    if (x >= next_x)  continue;
-
-    next_x = x;
-  } // for i
-
-  return next_x;
-}
-//}}}
-
-inline int
-PTR::getVerRangeNext(const std::set<bPoint>& points,
-                     const int y1, const int y2, const int min_x)
-//{{{
-{
-  int next_x = INT_MAX / 2;
-  
-  for (std::set<bPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
-  {
-    int x = sitr->x(), y = sitr->y();
     if (y<y1 || y>y2) continue;
     if (x <= min_x)   continue;
     if (x >= next_x)  continue;
@@ -643,56 +404,28 @@ PTR::findLine(const std::vector<bPoint> points)
 //}}}
 
 
-// check whether input is orthogonal shape
-inline bool
-PTR::isOrthogonal(const std::vector<bPoint> points)
-{
-  for (int i=0; i<points.size()-1; i++)
-  {
-    int x1 = points[i].x(), x2 = points[i+1].x();
-    int y1 = points[i].y(), y2 = points[i+1].y();
-    if (x1 != x2 && y1 != y2) return false;
-  } // for i
-  return true;
-}
-
-
-
 inline void
 PTR::print(const std::vector<bPoint> points, int min_x, int min_y)
 //{{{
 {
-  printf ("points: ");
+  printf ("\tpoints: ");
   for (int i=0; i<points.size(); i++)
   {
     int x = points[i].x();
     int y = points[i].y();
-    printf ("(%d, %d) ", x-min_x, y-min_y);
+    printf ("%d(%d, %d) ", i, x-min_x, y-min_y);
   }
   printf ("\n");
 }
 //}}}
-
-inline void
-PTR::print(const std::set<bPoint> points, int min_x, int min_y)
-//{{{
-{
-  printf ("points: ");
-  for (std::set<bPoint>::iterator sitr=points.begin(); sitr!=points.end(); sitr++)
-  {
-    int x = sitr->x(), y = sitr->y();
-    printf ("(%d, %d) ", x-min_x, y-min_y);
-  }
-  printf ("\n");
-}
-//}}}
-
 } // namespace bLib
 
 
 /*
 // ==== Implementation Logs:
 //
+// 11/2014: fix bug for ICCAD'14 contest (again). Remove the implementation based on std::set
+// 10/2014: fix bug for ICCAD'14 contest
 // 07/2014: change myPoint==>bPoint
 // 
 */

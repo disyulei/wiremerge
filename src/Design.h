@@ -16,10 +16,10 @@ typedef gtl::polygon_data<int> Polygon;
 typedef gtl::rectangle_data<int> Rectangle;
 typedef gtl::point_data<int> Point;
 
-#include "bLib/bLibBase.h"
-#include "bLib/bLibPtr.h"
-#include "bLib/bLibShape.h"
-#include "bLib/bLibRTree.h"
+#include "bLibBase.h"
+#include "bLibPtr.h"
+#include "bLibShape.h"
+#include "bLibRTree.h"
 #include "main.h"
 
 class Design

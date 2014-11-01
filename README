@@ -2,14 +2,15 @@
 
 ==================   wireMerge - Version 2.1  ====================
    Author      :  Bei Yu  (UT Austin)                             
-   Last Update :  08/2014                                         
+   Last Update :  11/2014                                         
    Function    :  remove overlappings in layout                   
 ==================================================================
 
 # ==== Note:
-boost (http://www.boost.org/) is required. Please specify path to boost in $(BOOST_HOME)
+boost (http://www.boost.org/) is required. Please specify path to boost in $(BOOST_DIR)
 
 
 # ==== Log:
+11/2014:  update bLib
 08/2014:  version 2.1: fix potential parsing bug
 

@@ -1,5 +1,6 @@
 # boost
-BOOST_I=-I$(BOOST_HOME)
+BOOST_I=-I$(BOOST_DIR)
+BLIB_I=-I./bLib
 
 CC        =  g++
 CXX       =  g++34
@@ -23,7 +24,7 @@ $(EXE): $(OBJS)
 
 $(OPATH)%.o:%.cpp
 	@$(MKDIR)
-	$(CC) $(CFLAGS) -c -o $@ $< $(BOOST_I)
+	$(CC) $(CFLAGS) -c -o $@ $< $(BOOST_I) $(BLIB_I)
 
 clean:
 	rm -f *.o *~ $(EXE) $(OPATH)*

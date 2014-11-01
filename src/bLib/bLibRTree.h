@@ -3,8 +3,8 @@
 
 // ===================================================================
 //    class       : RTree
-//    author      : Bei Yu
-//    last update : 05/2014
+//    author      : Bei Yu, Yibo Lin
+//    last update : 11/2014
 // ===================================================================
 
 #include "bLibShape.h"
@@ -27,6 +27,20 @@ struct RtreeRect
   int ll[2], ur[2];
 };
 
+template <typename T>
+struct RTreeSearchCallBack
+{
+	std::vector<T>& searchResult;
+
+	RTreeSearchCallBack(std::vector<T>& sr) : searchResult(sr) {}
+
+	bool operator() (T const& data, void* arg) 
+	{
+		searchResult.push_back(data);
+		return true;
+	}
+};
+
 // ==================================
 //           bLibRTree
 // ==================================
@@ -41,6 +55,19 @@ public:
   int    getSize();  // count the data in the tree, but slow
   std::vector<Type*>* search(bBox* bbox);
   std::vector<Type*>* search(const int, const int, const int, const int);
+
+  std::vector<Type*> search_safe(bBox* bbox)
+  {
+	  this->search_safe(bbox->x1(), bbox->y1(), bbox->x2(), bbox->y2());
+  }
+  std::vector<Type*> search_safe(const int& x1, const int& y1, const int& x2, const int& y2)
+  {
+	  RtreeRect rect(x1, y1, x2, y2);
+	  std::vector<Type*> searchResult;
+	  RTreeSearchCallBack<Type*> cbk (searchResult);
+	  m_tree.SearchSafe(rect.ll, rect.ur, cbk, NULL);
+	  return searchResult;
+  }
 
   static std::vector<Type*> s_searchResult;
 
@@ -102,6 +129,7 @@ std::vector<Type*> bLibRTree<Type>::s_searchResult;
 /*
 // ==== Implementation Log:
 //
+// 11/2014: new function search_safe(), to support multi-thread operations
 // 05/2014: new function search(const int, const int, const int, const int)
 //
 */

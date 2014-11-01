@@ -95,6 +95,8 @@ public:
   /// \param a_context User context to pass as parameter to a_resultCallback
   /// \return Returns the number of entries found
   int Search(const ELEMTYPE a_min[NUMDIMS], const ELEMTYPE a_max[NUMDIMS], bool __cdecl a_resultCallback(DATATYPE a_data, void* a_context), void* a_context);
+  template <typename CallBackType>
+  int SearchSafe(const ELEMTYPE a_min[NUMDIMS], const ELEMTYPE a_max[NUMDIMS], CallBackType& a_resultCallback, void* a_context);  // Yibo (09/2014): support multi-thread
   
   /// Remove all entries from tree
   void RemoveAll();
@@ -359,6 +361,8 @@ protected:
   bool Overlap(Rect* a_rectA, Rect* a_rectB);
   void ReInsert(Node* a_node, ListNode** a_listNode);
   bool Search(Node* a_node, Rect* a_rect, int& a_foundCount, bool __cdecl a_resultCallback(DATATYPE a_data, void* a_context), void* a_context);
+  template <typename CallBackType>
+  bool SearchSafe(Node* a_node, Rect* a_rect, int& a_foundCount, CallBackType& a_resultCallback, void* a_context);  // Yibo (09/2014): support multi-thread
   void RemoveAllRec(Node* a_node);
   void Reset();
   void CountRec(Node* a_node, int& a_count);
@@ -554,6 +558,32 @@ int RTREE_QUAL::Search(const ELEMTYPE a_min[NUMDIMS], const ELEMTYPE a_max[NUMDI
   return foundCount;
 }
 
+RTREE_TEMPLATE
+template <typename CallBackType>
+int RTREE_QUAL::SearchSafe(const ELEMTYPE a_min[NUMDIMS], const ELEMTYPE a_max[NUMDIMS], CallBackType& a_resultCallback, void* a_context)
+{
+#ifdef _DEBUG
+  for(int index=0; index<NUMDIMS; ++index)
+  {
+    ASSERT(a_min[index] <= a_max[index]);
+  }
+#endif //_DEBUG
+
+  Rect rect;
+  
+  for(int axis=0; axis<NUMDIMS; ++axis)
+  {
+    rect.m_min[axis] = a_min[axis];
+    rect.m_max[axis] = a_max[axis];
+  }
+
+  // NOTE: May want to return search result another way, perhaps returning the number of found elements here.
+
+  int foundCount = 0;
+  SearchSafe(m_root, &rect, foundCount, a_resultCallback, a_context);
+
+  return foundCount;
+}
 
 RTREE_TEMPLATE
 int RTREE_QUAL::Count()
@@ -1590,6 +1620,50 @@ bool RTREE_QUAL::Search(Node* a_node, Rect* a_rect, int& a_foundCount, bool __cd
   return true; // Continue searching
 }
 
+RTREE_TEMPLATE
+template <typename CallBackType>
+bool RTREE_QUAL::SearchSafe(Node* a_node, Rect* a_rect, int& a_foundCount, CallBackType& a_resultCallback, void* a_context)
+{
+  ASSERT(a_node);
+  ASSERT(a_node->m_level >= 0);
+  ASSERT(a_rect);
+
+  if(a_node->IsInternalNode()) // This is an internal node in the tree
+  {
+    for(int index=0; index < a_node->m_count; ++index)
+    {
+      if(Overlap(a_rect, &a_node->m_branch[index].m_rect))
+      {
+        if(!SearchSafe(a_node->m_branch[index].m_child, a_rect, a_foundCount, a_resultCallback, a_context))
+        {
+          return false; // Don't continue searching
+        }
+      }
+    }
+  }
+  else // This is a leaf node
+  {
+    for(int index=0; index < a_node->m_count; ++index)
+    {
+      if(Overlap(a_rect, &a_node->m_branch[index].m_rect))
+      {
+        DATATYPE& id = a_node->m_branch[index].m_data;
+        
+        // NOTE: There are different ways to return results.  Here's where to modify
+        if(&a_resultCallback)
+        {
+          ++a_foundCount;
+          if(!a_resultCallback(id, a_context))
+          {
+            return false; // Don't continue searching
+          }
+        }
+      }
+    }
+  }
+
+  return true; // Continue searching
+}
 
 #undef RTREE_TEMPLATE
 #undef RTREE_QUAL

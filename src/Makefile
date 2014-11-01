@@ -4,9 +4,8 @@ BLIB_I=-I./bLib
 
 CC        =  g++
 CXX       =  g++34
-CFLAGS    =  -funroll-all-loops -O2 -m64 -fPIC -Wno-deprecated 
-#CFLAGS   =  -g -Wno-deprecated 
-CCLNFLAGS = 
+CFLAGS    =  -O2  -Wno-unnamed-type-template-args 
+#CFLAGS   =  -g -Wno-unnamed-type-template-args
 
 MKDIR = if [ ! -d $(@D) ]; then mkdir $(@D); fi
 BPATH = ../build/

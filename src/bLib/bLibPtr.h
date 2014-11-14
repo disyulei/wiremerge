@@ -27,7 +27,7 @@ class PTR
 {
 public:
   template<class Type>
-  static bool polygon2Rect(std::vector<bPoint>& points, std::vector<Type> & vBoxes);
+  static bool polygon2Rect(std::vector<bPoint>& points, std::vector<Type> & vBoxes, int flag=-1);
 
 private:
   static void removeDuplicate(std::vector<bPoint>&);
@@ -48,9 +48,10 @@ private:
 // meanwhile, reduce the slice rectangle
 // Input  : points
 // Output : boxes
+// flag = 0 (only horiozntal cut); 1 (only vertical cut)
 template<class Type>
 inline bool
-PTR::polygon2Rect(std::vector<bPoint>& vpoints, std::vector<Type>& boxes)
+PTR::polygon2Rect(std::vector<bPoint>& vpoints, std::vector<Type>& boxes, int flag)
 //{{{
 {
 #ifdef _DEBUG_PTR
@@ -96,25 +97,38 @@ PTR::polygon2Rect(std::vector<bPoint>& vpoints, std::vector<Type>& boxes)
       return false;
     }
 
-    // until now: two candidates:
-    int slide_y = getHorRangeNext(vpoints, Pk.x(), Pl.x(), Pm.y()) - Pm.y();
-    int slide_x = getVerRangeNext(vpoints, Vk.y(), Vl.y(), Vm.x()) - Vm.x();
-
     Type box;
-    //printf("slide_x=%d, slide_y=%d\n", slide_x, slide_y);
-    //printf("%d, %d, %d, %d\n", Pk.x(), Pk.y(), Pl.x(), Pm.y());
-    //printf("%d, %d, %d, %d\n", Vk.x(), Vk.y(), Vm.x(), Vl.y());
-    #ifdef _DEBUG_PTR
-    if (slide_y >= slide_x) printf("DEBUG| select Pk, Pl. Pm\n");
-    else                    printf("DEBUG| select Vk, Vl. Vm\n");
-    #endif
-    if (slide_y >= slide_x) box.set(Pk.x(), Pk.y(), Pl.x(), Pm.y());
-    else                    box.set(Vk.x(), Vk.y(), Vm.x(), Vl.y());
+    if (0 == flag)
+    {
+        // only ONE candidates: horizontal cut
+        getHorRangeNext(vpoints, Pk.x(), Pl.x(), Pm.y()) - Pm.y();
+        box.set(Pk.x(), Pk.y(), Pl.x(), Pm.y());
+    }
+    else if (1 == flag)
+    {
+        // only ONE candidates: vertical cut
+        getVerRangeNext(vpoints, Vk.y(), Vl.y(), Vm.x()) - Vm.x();
+        box.set(Vk.x(), Vk.y(), Vm.x(), Vl.y());
+    }
+    else // -1 == flag
+    {
+        // two candidates:
+        int slide_y = getHorRangeNext(vpoints, Pk.x(), Pl.x(), Pm.y()) - Pm.y();
+        int slide_x = getVerRangeNext(vpoints, Vk.y(), Vl.y(), Vm.x()) - Vm.x();
+#ifdef _DEBUG_PTR
+        if (slide_y >= slide_x) printf("DEBUG| select Pk, Pl. Pm\n");
+        else                    printf("DEBUG| select Vk, Vl. Vm\n");
+#endif
+        if (slide_y >= slide_x) box.set(Pk.x(), Pk.y(), Pl.x(), Pm.y());
+        else                    box.set(Vk.x(), Vk.y(), Vm.x(), Vl.y());
+    }
+
+
     if (box.x2()>INT_MAX-1000 || box.y2()>INT_MAX-1000) return false;
     boxes.push_back(box);
-    #ifdef _DEBUG_PTR
+#ifdef _DEBUG_PTR
     printf ("DEBUG| add box (%d %d), (%d %d) into output vector<myBox>\n", box.x1(), box.y1(), box.x2(), box.y2());
-    #endif
+#endif
     
     F(vpoints, box.x1(), box.y1());
     F(vpoints, box.x1(), box.y2());

@@ -6,7 +6,7 @@
 //
 //   Class       : bBox, bShape
 //   Author      : Bei Yu
-//   Last update : 05/2014
+//   Last update : 11/2014
 // ============================================================== //
 
 #include <cassert>
@@ -59,6 +59,12 @@ std::ostream& operator << (std::ostream& out, bBox& mybox)
 {
   out<<mybox.getId()<<"| ("<<mybox.x1()<<","<<mybox.y1()<<")  ("<<mybox.x2()<<","<<mybox.y2()<<")";
   return out;
+}
+inline
+bool comparebBoxX(bBox* pbox1, bBox* pbox2)
+{
+    if (pbox1->xCenter()==pbox2->xCenter()) return pbox1->yCenter() < pbox2->yCenter();
+    return pbox1->xCenter() < pbox2->xCenter();
 }
 
 // =============================================
@@ -307,6 +313,12 @@ std::ostream& operator << (std::ostream& out, bShape& myshape)
   out<<myshape.getId()<<": ("<<myshape.x1()<<","<<myshape.y1()<<") ("<<myshape.x2()<<","<<myshape.y2()<<") ";
   return out;
 }
+inline
+bool comparebShapeX(bShape* pshape1, bShape* pshape2)
+{
+    if (pshape1->xCenter()==pshape2->xCenter()) return pshape1->yCenter() < pshape2->yCenter();
+    return pshape1->xCenter() < pshape2->xCenter();
+}
 
 // =============================================
 //        functions for bShape
@@ -424,8 +436,8 @@ box2BoxDistY(bBox* box1, bBox* box2)
 /*
 // ==== Implementation Log:
 //
+// 11/2014: comparebShapeX() & comparebBoxX()
 // 07/2014: rename myBox==>bBox, myShape==>bShape
-// 
 // 05/2014: introduce namespace bLib
 //
 */

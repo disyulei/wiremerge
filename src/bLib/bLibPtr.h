@@ -101,13 +101,13 @@ PTR::polygon2Rect(std::vector<bPoint>& vpoints, std::vector<Type>& boxes, int fl
     if (0 == flag)
     {
         // only ONE candidates: horizontal cut
-        getHorRangeNext(vpoints, Pk.x(), Pl.x(), Pm.y()) - Pm.y();
+        //getHorRangeNext(vpoints, Pk.x(), Pl.x(), Pm.y()) - Pm.y();
         box.set(Pk.x(), Pk.y(), Pl.x(), Pm.y());
     }
     else if (1 == flag)
     {
         // only ONE candidates: vertical cut
-        getVerRangeNext(vpoints, Vk.y(), Vl.y(), Vm.x()) - Vm.x();
+        //getVerRangeNext(vpoints, Vk.y(), Vl.y(), Vm.x()) - Vm.x();
         box.set(Vk.x(), Vk.y(), Vm.x(), Vl.y());
     }
     else // -1 == flag

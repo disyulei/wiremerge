@@ -1,8 +1,8 @@
 #!
 
-#./wireMerge -in input1.ascii
+./wireMerge -in input1.ascii
 #./wireMerge -in input2.ascii
-./wireMerge -in input3.ascii
+#./wireMerge -in input3.ascii
 
 
 

@@ -1,13 +1,10 @@
 
 src/tags
 obj/*
-build/libOA/
-build/output.ascii
-build/*gds
 build/*.out
 build/*.tcl
-build/debug/*
 build/wireMerge
+build/output.*
 
 
 

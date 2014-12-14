@@ -1,6 +1,9 @@
-# boost
-BOOST_I=-I$(BOOST_DIR)
-BLIB_I=-I./bLib
+LIB_I   =  -I./bLib  -I$(BOOST_DIR)
+ifeq ($(shell uname), Darwin)
+LIB_L   =  -L./limbo -lgdsparser_mac
+else
+LIB_L   =  -L./limbo -lgdsparser_linux
+endif
 
 CC        =  g++
 CXX       =  g++34
@@ -19,12 +22,12 @@ EXE	= $(BPATH)wireMerge
 
 $(EXE): $(OBJS)
 	@$(MKDIR)
-	$(CC) $(CFLAGS) -o $@ $(OBJS) $(CCLNFLAGS) 
+	$(CC) $(CFLAGS) -o $@ $(OBJS) $(LIB_L) 
 	ctags -R *.cpp *.h bLib/*
 
 $(OPATH)%.o:%.cpp
 	@$(MKDIR)
-	$(CC) $(CFLAGS) -c -o $@ $< $(BOOST_I) $(BLIB_I)
+	$(CC) $(CFLAGS) -c -o $@ $< $(LIB_I)
 
 clean:
 	rm -f *.o *~ $(EXE) $(OPATH)*

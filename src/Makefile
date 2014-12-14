@@ -20,6 +20,7 @@ EXE	= $(BPATH)wireMerge
 $(EXE): $(OBJS)
 	@$(MKDIR)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) $(CCLNFLAGS) 
+	ctags -R *.cpp *.h bLib/*
 
 $(OPATH)%.o:%.cpp
 	@$(MKDIR)
